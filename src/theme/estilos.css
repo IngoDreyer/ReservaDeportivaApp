@@ -1,0 +1,21 @@
+.calendario {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+  }
+  
+  .horarios-disponibles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 10px;
+  }
+  
+  ion-select {
+    margin-bottom: 20px;
+  }
+  
+  ion-button {
+    --padding-start: 10px;
+    --padding-end: 10px;
+  }

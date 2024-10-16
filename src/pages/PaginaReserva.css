@@ -1,0 +1,207 @@
+@font-face {
+  font-family: 'Geologica';
+  src: url('../assets/fonts/Geologica-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: var(--ion-font-family);
+  background-color: #f4f4f4;
+}
+
+ion-title {
+  font-family: 'Geologica', sans-serif;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+  text-align: center;
+}
+
+ion-header ion-toolbar {
+  --background: #ffffff;
+}
+
+.search-icon {
+  font-size: 1.5em;
+  margin-right: 16px;
+  color: var(--ion-color-primary);
+}
+
+.section {
+  background-color: #ffffff;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h2 {
+  font-family: 'Geologica', sans-serif;
+  color: #333;
+  font-size: 1.2em;
+  margin-bottom: 12px;
+}
+
+.date-item.selected, .time-item.selected {
+  background-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+.day {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.weekday {
+  font-size: 0.8em;
+}
+
+.time-item {
+  padding: 8px 16px;
+}
+
+.siguiente-button {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
+  margin-top: 16px;
+}
+
+.custom-header {
+  background: white;
+}
+
+.custom-header ion-toolbar {
+  --background: white;
+}
+
+.title-container {
+  padding: 10px 20px;
+}
+
+.main-title {
+  font-family: 'Helvetica', Arial, sans-serif;
+  font-weight: bold;
+  font-size: 32px;
+  color: #C10230;
+  margin: 0;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.calendario-card, .horarios-card {
+  margin: 16px;
+}
+
+.servicio-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.servicio-selector span {
+  font-size: 16px;
+  color: #C10230;
+}
+
+.servicio-selector ion-icon {
+  font-size: 20px;
+  color: #C10230;
+}
+
+.servicio-modal .modal-wrapper {
+  --height: auto;
+  --width: 90%;
+  --border-radius: 20px;
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.servicio-modal .modal-content {
+  padding: 20px;
+  background-color: #f4f4f4;
+}
+
+.servicio-modal h2 {
+  text-align: center;
+  color: #888;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.servicio-modal ion-list {
+  background: transparent;
+}
+
+.servicio-modal ion-item {
+  --padding-start: 16px;
+  color: #C10230;  /* Color rojo de "Reserva Deportiva" */
+
+  --inner-padding-end: 16px;
+  --background: white;
+  --border-color: #e0e0e0;
+  --border-style: solid;
+  --border-width: 1px;
+  --border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.servicio-modal ion-item:last-child {
+  margin-bottom: 0;
+
+}
+
+.servicio-modal ion-label {
+  margin: 13px 0;
+  color: #C10230;  /* Color rojo de "Reserva Deportiva" */
+  font-weight: bold;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* Estilo para el ítem seleccionado */
+.servicio-modal ion-item.item-selected {
+  --background: #C10230;
+}
+
+.servicio-modal ion-item.item-selected ion-label {
+  color: #ffffff;
+}
+
+/* Añadir un icono de flecha a la derecha */
+.servicio-modal ion-item::part(native)::after {
+  content: '>';
+  position: absolute;
+  right: 16px;
+  color: #C10230;
+  font-size: 18px;
+}
+
+.servicio-modal ion-item.item-selected::part(native)::after {
+  color: #ff0000;
+}
+
+ion-select {
+  color: #C10230;
+  width: 100%;
+  max-width: 100%;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 13px;
+  --padding-bottom: 13px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+ion-select::part(icon) {
+  color: #C10230;
+  opacity: 1;
+}
+
+ion-select::part(text) {
+  color: #C10230;
+}

@@ -1,0 +1,53 @@
+.calendario {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 0 50px; /* Espacio para las flechas */
+  }
+  
+  .dias-contenedor {
+    display: flex;
+    justify-content: space-between;
+    width: 120%;
+    overflow-x: auto;
+  }
+  
+  .boton-dia {
+    flex: 1;
+    min-width: 10px;
+  }
+  
+  .contenido-dia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .numero-dia {
+    font-size: 1.5em;
+    font-weight: bold;
+  }
+  
+  .nombre-dia {
+    font-size: 0.9em;
+    text-transform: uppercase;
+  }
+  
+  .flecha-fija {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+  }
+  
+  .flecha-izquierda {
+    left: 0;
+  }
+  
+  .flecha-derecha {
+    right: 0;
+  }
+
+  .boton-dia.hoy {
+    border: 2px solid #C10230;
+  }
