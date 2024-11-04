@@ -3,6 +3,8 @@ import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import PaginaReserva from './pages/PaginaReserva';
+import ServiciosDeportivosAdmin from './components/Admin/ServiciosDeportivosAdmin';
+
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -35,6 +37,7 @@ const App: React.FC = () => (
         <Route exact path="/reserva">
           <PaginaReserva />
         </Route>
+        <Route path="/admin/servicios" component={ServiciosDeportivosAdmin} exact />
         <Route exact path="/">
           <Redirect to="/reserva" />
         </Route>

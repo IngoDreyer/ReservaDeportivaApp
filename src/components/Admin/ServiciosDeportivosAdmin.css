@@ -1,0 +1,62 @@
+.servicio-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    --background: white;
+    margin-bottom: 8px;
+    border-radius: 8px;
+  }
+  
+  .servicio-item ion-label h2 {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .servicio-item ion-label p {
+    margin-top: 4px;
+    color: #666;
+  }
+  
+  ion-modal ion-content {
+    --padding-top: 16px;
+    --padding-bottom: 16px;
+  }
+  
+  ion-modal ion-item {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --inner-padding-end: 16px;
+  }
+  
+  ion-modal ion-button {
+    margin: 16px;
+  }
+  
+  .estado-activo {
+    color: var(--ion-color-success);
+  }
+  
+  .estado-inactivo {
+    color: var(--ion-color-danger);
+  }
+  
+  ion-card {
+    margin: 16px;
+  }
+  
+  ion-button[color="primary"] {
+    --background: #C10230;
+    margin-bottom: 16px;
+  }
+  
+  ion-button[color="danger"] {
+    --background: #ff4961;
+  }
+  
+  ion-toolbar {
+    --background: white;
+  }
+  
+  ion-title {
+    color: #C10230;
+    font-weight: bold;
+  }
