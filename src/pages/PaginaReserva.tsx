@@ -2,17 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { 
   IonContent, IonPage, IonButton, IonHeader, IonToolbar,
   IonButtons, IonIcon, IonPopover, IonModal, IonList, IonItem, IonLabel, IonCard, IonCardContent,
-  IonCardHeader, IonCardTitle, IonTitle, IonSelect, IonSelectOption
+  IonCardHeader, IonCardTitle, IonTitle, IonSelect, IonSelectOption, IonSpinner
 } from '@ionic/react';
 import { personCircleOutline, keyOutline, chevronDownOutline, chevronForwardOutline, checkmarkOutline } from 'ionicons/icons';
 import Calendario from '../components/PaginaReserva/Calendario';
 import HorariosDisponibles from '../components/PaginaReserva/HorariosDisponibles';
 import { obtenerHorarios } from '../components/PaginaReserva/obtenerHorarios';
+import { useCampus, getCampusNameById, getServiciosByCampusId } from '../services/campusService';
 import './PaginaReserva.css';
 
 const PaginaReserva: React.FC = () => {
-  const [campusSeleccionado, setCampusSeleccionado] = useState<string>('Talca');
-  const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('tenis');
+  // Usar el hook personalizado para cargar los campus
+  const { campuses, loading, error } = useCampus();
+  
+  // Estados del componente
+  const [campusSeleccionado, setCampusSeleccionado] = useState<number>(0);
+  const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('');
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
   const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
   const [showServicioModal, setShowServicioModal] = useState(false);
@@ -20,21 +25,30 @@ const PaginaReserva: React.FC = () => {
   const [showTokenPopover, setShowTokenPopover] = useState(false);
   const [showResumenModal, setShowResumenModal] = useState(false);
 
-  const campusServicios = {
-    Talca: ['Tenis', 'Fútbol', 'Gimnasio'],
-    Santiago: ['Gimnasio'],
-    Curico: ['Gimnasio']
-  };
-
-  const horarios = obtenerHorarios(servicioSeleccionado, fechaSeleccionada);
-
+  // Establecer valores iniciales cuando se cargan los campus
   useEffect(() => {
-    setHoraSeleccionada('');
-    setServicioSeleccionado(campusServicios[campusSeleccionado][0].toLowerCase());
+    if (campuses.length > 0 && campusSeleccionado === 0) {
+      setCampusSeleccionado(campuses[0].id);
+      const serviciosIniciales = getServiciosByCampusId(campuses[0].id);
+      if (serviciosIniciales.length > 0) {
+        setServicioSeleccionado(serviciosIniciales[0].toLowerCase());
+      }
+    }
+  }, [campuses, campusSeleccionado]);
+
+  // Actualizar servicio cuando cambia el campus
+  useEffect(() => {
+    if (campusSeleccionado) {
+      const servicios = getServiciosByCampusId(campusSeleccionado);
+      if (servicios.length > 0) {
+        setServicioSeleccionado(servicios[0].toLowerCase());
+      }
+    }
   }, [campusSeleccionado]);
 
-  const manejarCambioCampus = (nuevoCampus: string) => {
-    setCampusSeleccionado(nuevoCampus);
+  // Manejadores de eventos
+  const manejarCambioCampus = (nuevoId: number) => {
+    setCampusSeleccionado(nuevoId);
   };
 
   const manejarCambioServicio = (nuevoServicio: string) => {
@@ -47,12 +61,49 @@ const PaginaReserva: React.FC = () => {
   };
 
   const formatearFecha = (fecha: Date) => {
-    return fecha.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    return fecha.toLocaleDateString('es-ES', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
+
+  // Obtener horarios
+  const horarios = obtenerHorarios(servicioSeleccionado, fechaSeleccionada);
+
+  // Renderizar estado de carga
+  if (loading) {
+    return (
+      <IonPage>
+        <IonContent className="ion-padding">
+          <div className="loading-container">
+            <IonSpinner name="crescent" />
+            <p>Cargando campus...</p>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  // Renderizar estado de error
+  if (error) {
+    return (
+      <IonPage>
+        <IonContent className="ion-padding">
+          <IonCard>
+            <IonCardContent>
+              <p>Error: {error}</p>
+              <IonButton onClick={() => window.location.reload()}>Reintentar</IonButton>
+            </IonCardContent>
+          </IonCard>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage>
-
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
@@ -60,8 +111,8 @@ const PaginaReserva: React.FC = () => {
               <IonIcon icon={personCircleOutline} />
             </IonButton>
           </IonButtons>
-          <IonTitle className="custom-title">Reserva </IonTitle>
-          <IonTitle className="custom-title">       Deportiva_</IonTitle>
+          <IonTitle className="custom-title">Reserva Deportiva_ </IonTitle>
+          <IonTitle className="custom-title">       </IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={() => setShowTokenPopover(true)}>
               <IonIcon icon={keyOutline} />
@@ -72,7 +123,6 @@ const PaginaReserva: React.FC = () => {
 
       <IonContent>
         <IonCard>
-          
           <IonCardHeader>
             <IonCardTitle>Selecciona un campus</IonCardTitle>
           </IonCardHeader>
@@ -81,15 +131,13 @@ const PaginaReserva: React.FC = () => {
               value={campusSeleccionado}
               onIonChange={(e) => manejarCambioCampus(e.detail.value)}
             >
-              {Object.keys(campusServicios).map((campus) => (
-                <IonSelectOption key={campus} value={campus}>
-                  {campus}
+              {campuses.map((campus) => (
+                <IonSelectOption key={campus.id} value={campus.id}>
+                  {campus.description}
                 </IonSelectOption>
               ))}
             </IonSelect>
           </IonCardContent>
-
-
         </IonCard>
 
         <IonCard>
@@ -114,7 +162,7 @@ const PaginaReserva: React.FC = () => {
           <div className="modal-content">
             <h2>Tipo de servicio</h2>
             <IonList>
-            {campusServicios[campusSeleccionado].map((servicio) => (
+              {getServiciosByCampusId(campusSeleccionado).map((servicio) => (
                 <IonItem 
                   key={servicio} 
                   button 
@@ -127,7 +175,7 @@ const PaginaReserva: React.FC = () => {
             </IonList>
           </div>
         </IonModal>
-        
+
         <IonCard className="calendario-card">
           <IonCardHeader>
             <IonCardTitle>Selecciona una fecha</IonCardTitle>
@@ -157,7 +205,11 @@ const PaginaReserva: React.FC = () => {
           </IonCardContent>
         </IonCard>
         
-        <IonButton expand="block" disabled={!horaSeleccionada} onClick={() => setShowResumenModal(true)}>
+        <IonButton 
+          expand="block" 
+          disabled={!horaSeleccionada} 
+          onClick={() => setShowResumenModal(true)}
+        >
           <IonIcon icon={chevronForwardOutline} /> Siguiente
         </IonButton>
 
@@ -189,7 +241,7 @@ const PaginaReserva: React.FC = () => {
               <IonItem>
                 <IonLabel>
                   <h2>Campus</h2>
-                  <p>{campusSeleccionado}</p>
+                  <p>{getCampusNameById(campuses, campusSeleccionado)}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>

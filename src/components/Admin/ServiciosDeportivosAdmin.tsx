@@ -1,68 +1,185 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   IonContent, IonPage, IonHeader, IonToolbar, IonTitle, IonList, IonItem, 
-  IonLabel, IonButton, IonIcon, IonModal, IonButtons, IonInput, IonSelect, 
-  IonSelectOption, IonCard, IonCardHeader, IonCardContent, IonCardTitle 
+  IonLabel, IonButton, IonIcon, IonModal, IonButtons, IonSelect, 
+  IonSelectOption, IonCard, IonCardHeader, IonCardContent, IonCardTitle,
+  IonSegment, IonSegmentButton, IonSpinner
 } from '@ionic/react';
-import { add, create, trash, closeCircle } from 'ionicons/icons';
+import { add, create, trash, closeCircle, time } from 'ionicons/icons';
+import { Campus, Servicio, Deporte, getCampus, getDeportes } from '../../services/serviciosDeportivosService';
 import './ServiciosDeportivosAdmin.css';
 
-interface Servicio {
-  id: string;
-  nombre: string;
-  campus: string;
+interface NuevoServicioState {
+  campusId: number;
+  deporte: string;
   estado: boolean;
-  capacidad: number;
 }
 
 const ServiciosDeportivosAdmin: React.FC = () => {
-  const [servicios, setServicios] = useState<Servicio[]>([
-    { id: '1', nombre: 'Tenis', campus: 'Talca', estado: true, capacidad: 4 },
-    { id: '2', nombre: 'Fútbol', campus: 'Talca', estado: true, capacidad: 22 },
-    { id: '3', nombre: 'Gimnasio', campus: 'Talca', estado: true, capacidad: 30 },
-    { id: '4', nombre: 'Gimnasio', campus: 'Santiago', estado: true, capacidad: 25 },
-    { id: '5', nombre: 'Gimnasio', campus: 'Curicó', estado: true, capacidad: 20 }
-  ]);
+  // Estados principales
+  const [campus, setCampus] = useState<Campus[]>([]);
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [activeTab, setActiveTab] = useState('servicios');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deportesDisponibles, setDeportesDisponibles] = useState<Deporte[]>([]);
+  const [loadingDeportes, setLoadingDeportes] = useState(false);
 
-  const [showModal, setShowModal] = useState(false);
-  const [editando, setEditando] = useState<Servicio | null>(null);
-  const [nuevoServicio, setNuevoServicio] = useState<Partial<Servicio>>({
-    nombre: '',
-    campus: '',
+  // Estados para modales
+  const [showServicioModal, setShowServicioModal] = useState(false);
+  const [showHorariosModal, setShowHorariosModal] = useState(false);
+  const [servicioSeleccionado, setServicioSeleccionado] = useState<Servicio | null>(null);
+  
+  // Estado para nuevo servicio
+  const [nuevoServicio, setNuevoServicio] = useState<NuevoServicioState>({
+    campusId: 0,
+    deporte: '',
     estado: true,
-    capacidad: 0
   });
 
-  const handleAgregarEditar = () => {
-    if (editando) {
-      setServicios(servicios.map(s => s.id === editando.id ? { ...nuevoServicio, id: editando.id } as Servicio : s));
+  // Estado para horarios
+  const [horariosSeleccionados, setHorariosSeleccionados] = useState<string[]>([]);
+
+  // Cargar campus inicialmente
+  useEffect(() => {
+    const loadCampus = async () => {
+      try {
+        setLoading(true);
+        const data = await getCampus();
+        setCampus(data);
+      } catch (err) {
+        setError('Error al cargar los campus');
+        console.error('Error loading campus:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCampus();
+  }, []);
+
+  // Cargar deportes cuando se selecciona un campus
+  const loadDeportesForCampus = async (campusId: number) => {
+    if (campusId > 0) {
+      try {
+        setLoadingDeportes(true);
+        setError(null);
+        const deportes = await getDeportes(campusId);
+        
+        if (deportes && deportes.length > 0) {
+          setDeportesDisponibles(deportes);
+          console.log('Deportes cargados:', deportes);
+        } else {
+          setDeportesDisponibles([]);
+          console.log('No se encontraron deportes para este campus');
+        }
+      } catch (err) {
+        console.error('Error al cargar deportes:', err);
+        setError('Error al cargar los deportes');
+        setDeportesDisponibles([]);
+      } finally {
+        setLoadingDeportes(false);
+      }
     } else {
-      const newId = (Math.max(...servicios.map(s => parseInt(s.id))) + 1).toString();
-      setServicios([...servicios, { ...nuevoServicio, id: newId } as Servicio]);
+      setDeportesDisponibles([]);
     }
-    resetForm();
   };
 
-  const handleEliminar = (id: string) => {
+  const handleCampusChange = async (event: CustomEvent) => {
+    const campusId = Number(event.detail.value);
+    
+    if (!isNaN(campusId)) {
+      setNuevoServicio(prev => ({
+        ...prev,
+        campusId,
+        deporte: '' // Reset deporte when campus changes
+      }));
+      
+      await loadDeportesForCampus(campusId);
+    }
+  };
+
+  const handleAgregarServicio = () => {
+    if (nuevoServicio.campusId && nuevoServicio.deporte) {
+      const newId = servicios.length > 0 
+        ? (Math.max(...servicios.map(s => parseInt(s.id))) + 1).toString()
+        : '1';
+      
+      const nuevoServicioCompleto: Servicio = {
+        id: newId,
+        campusId: nuevoServicio.campusId,
+        deporte: nuevoServicio.deporte,
+        estado: nuevoServicio.estado,
+        horarios: []
+      };
+
+      setServicios([...servicios, nuevoServicioCompleto]);
+      resetForm();
+    }
+  };
+
+  const handleEliminarServicio = (id: string) => {
     setServicios(servicios.filter(s => s.id !== id));
   };
 
-  const handleEditar = (servicio: Servicio) => {
-    setEditando(servicio);
-    setNuevoServicio(servicio);
-    setShowModal(true);
+  const handleEditarHorarios = (servicio: Servicio) => {
+    setServicioSeleccionado(servicio);
+    setHorariosSeleccionados(servicio.horarios || []);
+    setShowHorariosModal(true);
+  };
+
+  const handleAgregarHorario = (horario: string) => {
+    if (servicioSeleccionado && !horariosSeleccionados.includes(horario)) {
+      const nuevosHorarios = [...horariosSeleccionados, horario];
+      setHorariosSeleccionados(nuevosHorarios);
+      
+      setServicios(servicios.map(s => 
+        s.id === servicioSeleccionado.id 
+          ? { ...s, horarios: nuevosHorarios }
+          : s
+      ));
+    }
+  };
+
+  const handleEliminarHorario = (horario: string) => {
+    if (servicioSeleccionado) {
+      const nuevosHorarios = horariosSeleccionados.filter(h => h !== horario);
+      setHorariosSeleccionados(nuevosHorarios);
+      
+      setServicios(servicios.map(s => 
+        s.id === servicioSeleccionado.id 
+          ? { ...s, horarios: nuevosHorarios }
+          : s
+      ));
+    }
   };
 
   const resetForm = () => {
-    setShowModal(false);
-    setEditando(null);
+    setShowServicioModal(false);
     setNuevoServicio({
-      nombre: '',
-      campus: '',
+      campusId: 0,
+      deporte: '',
       estado: true,
-      capacidad: 0
     });
   };
+
+
+  if (error) {
+    return (
+      <IonPage>
+        <IonContent className="ion-padding">
+          <IonCard>
+            <IonCardContent>
+              <p>{error}</p>
+              <IonButton onClick={() => window.location.reload()}>
+                Reintentar
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage>
@@ -73,52 +190,67 @@ const ServiciosDeportivosAdmin: React.FC = () => {
       </IonHeader>
 
       <IonContent>
-        <IonCard>
-          <IonCardHeader>
-            <IonCardTitle>Servicios Disponibles</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <IonButton 
-              expand="block"
-              onClick={() => setShowModal(true)}
-              color="primary"
-            >
-              <IonIcon icon={add} slot="start" />
-              Agregar Nuevo Servicio
-            </IonButton>
+        <IonSegment value={activeTab} onIonChange={e => setActiveTab(e.detail.value as string)}>
+          <IonSegmentButton value="servicios">
+            <IonLabel>Servicios</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="horarios">
+            <IonLabel>Horarios</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
 
-            <IonList>
-              {servicios.map((servicio) => (
-                <IonItem key={servicio.id}>
-                  <IonLabel>
-                    <h2>{servicio.nombre}</h2>
-                    <p>Campus: {servicio.campus}</p>
-                    <p>Capacidad: {servicio.capacidad} personas</p>
-                    <p>Estado: {servicio.estado ? 'Activo' : 'Inactivo'}</p>
-                  </IonLabel>
-                  <IonButton 
-                    fill="clear"
-                    onClick={() => handleEditar(servicio)}
-                  >
-                    <IonIcon icon={create} slot="icon-only" />
-                  </IonButton>
-                  <IonButton 
-                    fill="clear"
-                    color="danger"
-                    onClick={() => handleEliminar(servicio.id)}
-                  >
-                    <IonIcon icon={trash} slot="icon-only" />
-                  </IonButton>
-                </IonItem>
-              ))}
-            </IonList>
-          </IonCardContent>
-        </IonCard>
+        {activeTab === 'servicios' && (
+          <IonCard>
+            <IonCardContent>
+              <IonButton expand="block" onClick={() => setShowServicioModal(true)}>
+                <IonIcon icon={add} slot="start" />
+                Agregar Nuevo Servicio
+              </IonButton>
 
-        <IonModal isOpen={showModal} onDidDismiss={resetForm}>
+              <IonList>
+                {servicios.map((servicio) => (
+                  <IonItem key={servicio.id}>
+                    <IonLabel>
+                      <h2>{servicio.deporte}</h2>
+                      <p>Campus: {campus.find(c => c.id === servicio.campusId)?.description}</p>
+                      <p>Estado: {servicio.estado ? 'Activo' : 'Inactivo'}</p>
+                    </IonLabel>
+                    <IonButton fill="clear" color="danger" onClick={() => handleEliminarServicio(servicio.id)}>
+                      <IonIcon icon={trash} />
+                    </IonButton>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        )}
+
+        {activeTab === 'horarios' && (
+          <IonCard>
+            <IonCardContent>
+              <IonList>
+                {servicios.map((servicio) => (
+                  <IonItem key={servicio.id}>
+                    <IonLabel>
+                      <h2>{servicio.deporte}</h2>
+                      <p>Campus: {campus.find(c => c.id === servicio.campusId)?.description}</p>
+                      <p>Horarios configurados: {servicio.horarios?.length || 0}</p>
+                    </IonLabel>
+                    <IonButton fill="clear" onClick={() => handleEditarHorarios(servicio)}>
+                      <IonIcon icon={time} />
+                    </IonButton>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        )}
+
+        {/* Modal para agregar servicio */}
+        <IonModal isOpen={showServicioModal} onDidDismiss={resetForm}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle>{editando ? 'Editar Servicio' : 'Nuevo Servicio'}</IonTitle>
+              <IonTitle>Nuevo Servicio Deportivo</IonTitle>
               <IonButtons slot="end">
                 <IonButton onClick={resetForm}>
                   <IonIcon icon={closeCircle} />
@@ -129,57 +261,109 @@ const ServiciosDeportivosAdmin: React.FC = () => {
           <IonContent>
             <IonList>
               <IonItem>
-                <IonLabel position="stacked">Nombre del Servicio</IonLabel>
-                <IonSelect
-                  value={nuevoServicio.nombre}
-                  onIonChange={e => setNuevoServicio({ ...nuevoServicio, nombre: e.detail.value })}
-                >
-                  <IonSelectOption value="Tenis">Tenis</IonSelectOption>
-                  <IonSelectOption value="Fútbol">Fútbol</IonSelectOption>
-                  <IonSelectOption value="Gimnasio">Gimnasio</IonSelectOption>
-                </IonSelect>
-              </IonItem>
-
-              <IonItem>
                 <IonLabel position="stacked">Campus</IonLabel>
-                <IonSelect
-                  value={nuevoServicio.campus}
-                  onIonChange={e => setNuevoServicio({ ...nuevoServicio, campus: e.detail.value })}
+                <IonSelect 
+                  value={nuevoServicio.campusId}
+                  onIonChange={handleCampusChange}
                 >
-                  <IonSelectOption value="Talca">Talca</IonSelectOption>
-                  <IonSelectOption value="Santiago">Santiago</IonSelectOption>
-                  <IonSelectOption value="Curicó">Curicó</IonSelectOption>
+                  {campus.map(c => (
+                    <IonSelectOption key={c.id} value={c.id}>
+                      {c.description}
+                    </IonSelectOption>
+                  ))}
                 </IonSelect>
               </IonItem>
 
-              <IonItem>
-                <IonLabel position="stacked">Capacidad</IonLabel>
-                <IonInput
-                  type="number"
-                  value={nuevoServicio.capacidad}
-                  onIonChange={e => setNuevoServicio({ ...nuevoServicio, capacidad: parseInt(e.detail.value!) || 0 })}
-                />
-              </IonItem>
-
-              <IonItem>
-                <IonLabel position="stacked">Estado</IonLabel>
-                <IonSelect
-                  value={nuevoServicio.estado}
-                  onIonChange={e => setNuevoServicio({ ...nuevoServicio, estado: e.detail.value })}
-                >
-                  <IonSelectOption value={true}>Activo</IonSelectOption>
-                  <IonSelectOption value={false}>Inactivo</IonSelectOption>
-                </IonSelect>
-              </IonItem>
+              {nuevoServicio.campusId > 0 && (
+                <IonItem>
+                  <IonLabel position="stacked">Deporte</IonLabel>
+                  {loadingDeportes ? (
+                    <IonSpinner />
+                  ) : deportesDisponibles.length > 0 ? (
+                    <IonSelect
+                      value={nuevoServicio.deporte}
+                      onIonChange={e => setNuevoServicio(prev => ({ 
+                        ...prev, 
+                        deporte: e.detail.value 
+                      }))}
+                    >
+                      {deportesDisponibles.map(deporte => (
+                        <IonSelectOption key={deporte.id} value={deporte.name}>
+                          {deporte.name}
+                        </IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  ) : (
+                    <IonLabel color="medium">
+                      No hay deportes disponibles para este campus
+                    </IonLabel>
+                  )}
+                </IonItem>
+              )}
             </IonList>
 
-            <IonButton 
+            <IonButton
               expand="block"
-              onClick={handleAgregarEditar}
               className="ion-margin"
+              onClick={handleAgregarServicio}
+              disabled={!nuevoServicio.campusId || !nuevoServicio.deporte}
             >
-              {editando ? 'Guardar Cambios' : 'Agregar Servicio'}
+              Agregar Servicio
             </IonButton>
+          </IonContent>
+        </IonModal>
+
+        {/* Modal para gestionar horarios */}
+        <IonModal isOpen={showHorariosModal} onDidDismiss={() => setShowHorariosModal(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>Gestionar Horarios</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setShowHorariosModal(false)}>
+                  <IonIcon icon={closeCircle} />
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+            <IonList>
+              <IonItem>
+                <IonLabel position="stacked">Agregar Horario</IonLabel>
+                <IonSelect
+                  onIonChange={e => handleAgregarHorario(e.detail.value)}
+                  placeholder="Seleccionar horario"
+                >
+                  {Array.from({ length: 14 }, (_, i) => {
+                    const hora = i + 8;
+                    const horario = `${hora}:00 - ${hora + 1}:00`;
+                    return (
+                      <IonSelectOption 
+                        key={horario} 
+                        value={horario}
+                        disabled={horariosSeleccionados.includes(horario)}
+                      >
+                        {horario}
+                      </IonSelectOption>
+                    );
+                  })}
+                </IonSelect>
+              </IonItem>
+
+              <IonList>
+                {horariosSeleccionados.map((horario, index) => (
+                  <IonItem key={index}>
+                    <IonLabel>{horario}</IonLabel>
+                    <IonButton 
+                      fill="clear" 
+                      color="danger"
+                      onClick={() => handleEliminarHorario(horario)}
+                    >
+                      <IonIcon icon={trash} slot="icon-only" />
+                    </IonButton>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonList>
           </IonContent>
         </IonModal>
       </IonContent>
