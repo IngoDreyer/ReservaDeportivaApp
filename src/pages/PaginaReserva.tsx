@@ -4,47 +4,64 @@ import {
   IonButtons, IonIcon, IonPopover, IonModal, IonList, IonItem, IonLabel, IonCard, IonCardContent,
   IonCardHeader, IonCardTitle, IonTitle, IonSelect, IonSelectOption, IonSpinner
 } from '@ionic/react';
-import { personCircleOutline, keyOutline, chevronDownOutline, chevronForwardOutline, checkmarkOutline } from 'ionicons/icons';
+import { personCircleOutline, keyOutline, chevronForwardOutline, checkmarkOutline } from 'ionicons/icons';
 import Calendario from '../components/PaginaReserva/Calendario';
 import HorariosDisponibles from '../components/PaginaReserva/HorariosDisponibles';
 import { obtenerHorarios } from '../components/PaginaReserva/obtenerHorarios';
-import { useCampus, getCampusNameById, getServiciosByCampusId } from '../services/campusService';
+import { useCampus, getCampusNameById } from '../services/campusService';
+import { Deporte } from '../services/serviciosDeportivosService';
 import './PaginaReserva.css';
 
 const PaginaReserva: React.FC = () => {
-  // Usar el hook personalizado para cargar los campus
-  const { campuses, loading, error } = useCampus();
+  const { campuses, loading, error, loadDeportes } = useCampus();
   
   // Estados del componente
   const [campusSeleccionado, setCampusSeleccionado] = useState<number>(0);
+  const [deportesDisponibles, setDeportesDisponibles] = useState<Deporte[]>([]);
   const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('');
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
   const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
-  const [showServicioModal, setShowServicioModal] = useState(false);
   const [showRutPopover, setShowRutPopover] = useState(false);
   const [showTokenPopover, setShowTokenPopover] = useState(false);
   const [showResumenModal, setShowResumenModal] = useState(false);
 
   // Establecer valores iniciales cuando se cargan los campus
   useEffect(() => {
-    if (campuses.length > 0 && campusSeleccionado === 0) {
-      setCampusSeleccionado(campuses[0].id);
-      const serviciosIniciales = getServiciosByCampusId(campuses[0].id);
-      if (serviciosIniciales.length > 0) {
-        setServicioSeleccionado(serviciosIniciales[0].toLowerCase());
+    const inicializarCampus = async () => {
+      if (campuses.length > 0 && campusSeleccionado === 0) {
+        const primerCampus = campuses[0].id;
+        setCampusSeleccionado(primerCampus);
+        try {
+          const deportes = await loadDeportes(primerCampus);
+          setDeportesDisponibles(deportes);
+          if (deportes.length > 0) {
+            setServicioSeleccionado(deportes[0].name.toLowerCase());
+          }
+        } catch (error) {
+          console.error('Error al cargar deportes iniciales:', error);
+        }
       }
-    }
-  }, [campuses, campusSeleccionado]);
+    };
+    inicializarCampus();
+  }, [campuses, campusSeleccionado, loadDeportes]);
 
-  // Actualizar servicio cuando cambia el campus
+  // Actualizar deportes cuando cambia el campus
   useEffect(() => {
-    if (campusSeleccionado) {
-      const servicios = getServiciosByCampusId(campusSeleccionado);
-      if (servicios.length > 0) {
-        setServicioSeleccionado(servicios[0].toLowerCase());
+    const actualizarDeportes = async () => {
+      if (campusSeleccionado) {
+        try {
+          const deportes = await loadDeportes(campusSeleccionado);
+          setDeportesDisponibles(deportes);
+          if (deportes.length > 0) {
+            setServicioSeleccionado(deportes[0].name.toLowerCase());
+          }
+        } catch (error) {
+          console.error('Error al cargar deportes:', error);
+        }
       }
-    }
-  }, [campusSeleccionado]);
+    };
+    actualizarDeportes();
+  }, [campusSeleccionado, loadDeportes]);
 
   // Manejadores de eventos
   const manejarCambioCampus = (nuevoId: number) => {
@@ -53,7 +70,6 @@ const PaginaReserva: React.FC = () => {
 
   const manejarCambioServicio = (nuevoServicio: string) => {
     setServicioSeleccionado(nuevoServicio);
-    setShowServicioModal(false);
   };
 
   const manejarCambioFecha = (fecha: Date) => {
@@ -111,8 +127,12 @@ const PaginaReserva: React.FC = () => {
               <IonIcon icon={personCircleOutline} />
             </IonButton>
           </IonButtons>
-          <IonTitle className="custom-title">Reserva Deportiva_ </IonTitle>
-          <IonTitle className="custom-title">       </IonTitle>
+          <IonToolbar style={{ textAlign: 'center' }} mode="md">
+            <div className="sub-title">
+              <h2 className="main-title">Reserva</h2>
+              <h2 className="main-title_">Deportiva_</h2>
+            </div>
+          </IonToolbar>
           <IonButtons slot="end">
             <IonButton onClick={() => setShowTokenPopover(true)}>
               <IonIcon icon={keyOutline} />
@@ -145,36 +165,18 @@ const PaginaReserva: React.FC = () => {
             <IonCardTitle>Selecciona un servicio</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
-            <div className="servicio-selector" onClick={() => setShowServicioModal(true)}>
-              <span>{servicioSeleccionado.charAt(0).toUpperCase() + servicioSeleccionado.slice(1)}</span>
-              <IonIcon icon={chevronDownOutline} />
-            </div>
+            <IonSelect
+              value={servicioSeleccionado}
+              onIonChange={(e) => manejarCambioServicio(e.detail.value)}
+            >
+              {deportesDisponibles.map((deporte) => (
+                <IonSelectOption key={deporte.id} value={deporte.name.toLowerCase()}>
+                  {deporte.name}
+                </IonSelectOption>
+              ))}
+            </IonSelect>
           </IonCardContent>
         </IonCard>
-
-        <IonModal 
-          isOpen={showServicioModal} 
-          onDidDismiss={() => setShowServicioModal(false)}
-          className="servicio-modal"
-          breakpoints={[0, 0.25, 0.5, 0.75]}
-          initialBreakpoint={0.25}
-        >
-          <div className="modal-content">
-            <h2>Tipo de servicio</h2>
-            <IonList>
-              {getServiciosByCampusId(campusSeleccionado).map((servicio) => (
-                <IonItem 
-                  key={servicio} 
-                  button 
-                  onClick={() => manejarCambioServicio(servicio.toLowerCase())}
-                  className={servicioSeleccionado === servicio.toLowerCase() ? 'item-selected' : ''}
-                >
-                  <IonLabel>{servicio}</IonLabel>
-                </IonItem>
-              ))}
-            </IonList>
-          </div>
-        </IonModal>
 
         <IonCard className="calendario-card">
           <IonCardHeader>

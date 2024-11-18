@@ -1,27 +1,17 @@
+// campusService.ts
 import { useState, useEffect } from 'react';
+import { getCampus as fetchCampus, getDeportes} from './serviciosDeportivosService';
 
-// Definición de tipos
+export interface Deporte {
+  id: number;
+  name: string;
+}
+
 export interface Campus {
   id: number;
   description: string;
 }
 
-export interface ApiResponse<T> {
-  status: number;
-  data: T;
-}
-
-// Servicios disponibles por campus (temporal hasta tener API)
-export const serviciosPorCampus: Record<number, string[]> = {
-  1: ['Tenis', 'Fútbol', 'Gimnasio'], // Campus Lircay
-  2: ['Gimnasio'],                     // Campus Curicó
-  3: ['Gimnasio'],                     // Campus Pehuenche
-  4: ['Gimnasio'],                     // Campus Linares
-  5: ['Gimnasio'],                     // Campus Santiago
-  6: ['Gimnasio']                      // Campus Colchagua
-};
-
-// URLs de la API
 const API_BASE_URL = 'https://apptuiback.utalca.cl/reservaComplejoDeportivo';
 
 // Función para manejar errores de la API
@@ -30,41 +20,27 @@ const handleApiError = (error: any): never => {
   throw new Error(error.message || 'Error al conectar con el servidor');
 };
 
-// Servicio para obtener los campus
-export const getCampus = async (): Promise<Campus[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/get_campus`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const result: ApiResponse<Campus[]> = await response.json();
-    
-    if (result.status === 200) {
-      return result.data;
-    } else {
-      throw new Error('Error en la respuesta del servidor');
-    }
-  } catch (error) {
-    return handleApiError(error);
-  }
-};
-
 // Función helper para obtener el nombre del campus por ID
 export const getCampusNameById = (campuses: Campus[], id: number): string => {
   const campus = campuses.find(c => c.id === id);
   return campus ? campus.description : '';
 };
 
-// Función helper para obtener los servicios por ID de campus
-export const getServiciosByCampusId = (campusId: number): string[] => {
-  return serviciosPorCampus[campusId] || [];
+// Obtener servicios por ID de campus
+export const getServiciosByCampusId = async (campusId: number): Promise<string[]> => {
+  try {
+    const deportes = await getDeportes(campusId);
+    return deportes.map(deporte => deporte.name);
+  } catch (error) {
+    console.error('Error al obtener servicios:', error);
+    return [];
+  }
 };
 
-// Hook personalizado para manejar la carga de campus
+// Hook personalizado para manejar la carga de campus y deportes
 export const useCampus = () => {
   const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [deportes, setDeportes] = useState<Deporte[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,7 +48,7 @@ export const useCampus = () => {
     const loadCampuses = async () => {
       try {
         setLoading(true);
-        const data = await getCampus();
+        const data = await fetchCampus();
         setCampuses(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al cargar los campus');
@@ -84,5 +60,16 @@ export const useCampus = () => {
     loadCampuses();
   }, []);
 
-  return { campuses, loading, error };
+  const loadDeportes = async (campusId: number) => {
+    try {
+      const data = await getDeportes(campusId);
+      setDeportes(data);
+      return data;
+    } catch (err) {
+      console.error('Error al cargar deportes:', err);
+      return [];
+    }
+  };
+
+  return { campuses, deportes, loading, error, loadDeportes };
 };
