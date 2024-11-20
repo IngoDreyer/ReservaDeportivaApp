@@ -1,0 +1,18 @@
+.horarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  .horario-button {
+    --padding-start: 8px;
+    --padding-end: 8px;
+    width: 100%;
+  }
+  
+  .cancha-title {
+    margin: 16px 8px 8px 8px;
+    font-weight: 500;
+    color: var(--ion-color-medium);
+  }

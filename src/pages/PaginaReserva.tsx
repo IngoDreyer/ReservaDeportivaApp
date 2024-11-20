@@ -1,3 +1,20 @@
+// types.ts
+export interface DisponibilidadHorario {
+  schedule_id: number;
+  day_name: string;
+  calendar_date: string;
+  start: string;
+  finish: string;
+  court_id: number;
+  court_name: string;
+  reservation_id: number | null;
+  run: string | null;
+  register_date: string | null;
+  reservation_state: string | null;
+  availability_status: string;
+}
+
+// PaginaReserva.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   IonContent, IonPage, IonButton, IonHeader, IonToolbar,
@@ -8,101 +25,102 @@ import { personCircleOutline, keyOutline, chevronForwardOutline, checkmarkOutlin
 import Calendario from '../components/PaginaReserva/Calendario';
 import HorariosDisponibles from '../components/PaginaReserva/HorariosDisponibles';
 import { useCampus, getCampusNameById } from '../services/campusService';
-import { Deporte, getReservasDisponibles, ReservaDisponible } from '../services/serviciosDeportivosService';
+import { Deporte } from '../services/serviciosDeportivosService';
 import './PaginaReserva.css';
 
 const PaginaReserva: React.FC = () => {
   const { campuses, loading, error, loadDeportes } = useCampus();
   
-  // Estados del componente
+  const [step, setStep] = useState(1);
   const [campusSeleccionado, setCampusSeleccionado] = useState<number>(0);
   const [deportesDisponibles, setDeportesDisponibles] = useState<Deporte[]>([]);
-  const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('No existe servicio deportivo');
+  const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('');
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
-  const [horaSeleccionada, setHoraSeleccionada] = useState<string | null>(null);
-  const [scheduleIdSeleccionado, setScheduleIdSeleccionado] = useState<number | null>(null);
-  const [horariosDisponibles, setHorariosDisponibles] = useState<ReservaDisponible[]>([]);
+  const [horarios, setHorarios] = useState<Array<{id: number, hora: string, cancha: string}>>([]);
+  const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
+  const [isLoadingHorarios, setIsLoadingHorarios] = useState(false);
   const [showRutPopover, setShowRutPopover] = useState(false);
   const [showTokenPopover, setShowTokenPopover] = useState(false);
   const [showResumenModal, setShowResumenModal] = useState(false);
+  const [horarioSeleccionadoId, setHorarioSeleccionadoId] = useState<number | null>(null);
 
-  // Cargar horarios disponibles
-  const cargarHorariosDisponibles = async () => {
+  const obtenerHorariosDisponibles = async (fecha: Date, servicioId: number) => {
     try {
-      const horarios = await getReservasDisponibles();
-      setHorariosDisponibles(horarios);
+      const response = await fetch('https://apptuiback.utalca.cl/reservaComplejoDeportivo/get_reservas_disponibles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fecha: fecha.toISOString(),
+          servicioId: servicioId
+        })
+      });
+      
+      const data: DisponibilidadHorario[] = await response.json();
+      return data.filter(horario => horario.availability_status === 'Disponible')
+                .map(horario => ({
+                  id: horario.schedule_id,
+                  hora: horario.start,
+                  cancha: horario.court_name
+                }));
     } catch (error) {
-      console.error('Error al cargar horarios:', error);
+      console.error('Error al obtener horarios:', error);
+      return [];
     }
   };
 
-  // Efecto para cargar horarios cuando cambia el servicio o campus
-  useEffect(() => {
-    cargarHorariosDisponibles();
-  }, [campusSeleccionado, servicioSeleccionado]);
-
-  // Establecer valores iniciales cuando se cargan los campus
   useEffect(() => {
     const inicializarCampus = async () => {
       if (campuses.length > 0 && campusSeleccionado === 0) {
         const primerCampus = campuses[0].id;
         setCampusSeleccionado(primerCampus);
-        try {
-          const deportes = await loadDeportes(primerCampus);
-          setDeportesDisponibles(deportes);
-          if (deportes.length > 0) {
-            setServicioSeleccionado(deportes[0].name.toLowerCase());
-          } else {
-            setServicioSeleccionado('No existe servicio deportivo');
-          }
-        } catch (error) {
-          console.error('Error al cargar deportes iniciales:', error);
-          setServicioSeleccionado('No existe servicio deportivo');
-        }
+        await loadDeportesForCampus(primerCampus);
       }
     };
     inicializarCampus();
-  }, [campuses, campusSeleccionado, loadDeportes]);
+  }, [campuses]);
 
-  // Actualizar deportes cuando cambia el campus
-  useEffect(() => {
-    const actualizarDeportes = async () => {
-      if (campusSeleccionado) {
-        try {
-          const deportes = await loadDeportes(campusSeleccionado);
-          setDeportesDisponibles(deportes);
-          if (deportes.length > 0) {
-            setServicioSeleccionado(deportes[0].name.toLowerCase());
-          } else {
-            setServicioSeleccionado('No existe servicio deportivo');
-          }
-        } catch (error) {
-          console.error('Error al cargar deportes:', error);
-          setServicioSeleccionado('No existe servicio deportivo');
-        }
+  const loadDeportesForCampus = async (campusId: number) => {
+    try {
+      const deportes = await loadDeportes(campusId);
+      setDeportesDisponibles(deportes);
+      if (deportes.length > 0) {
+        setServicioSeleccionado(deportes[0].name);
       }
-    };
-    actualizarDeportes();
-  }, [campusSeleccionado, loadDeportes]);
+    } catch (error) {
+      console.error('Error al cargar deportes:', error);
+    }
+  };
 
-  // Manejadores de eventos
-  const manejarCambioCampus = (nuevoId: number) => {
+  const handleCampusChange = async (nuevoId: number) => {
     setCampusSeleccionado(nuevoId);
+    await loadDeportesForCampus(nuevoId);
+    setStep(2);
   };
 
-  const manejarCambioServicio = (nuevoServicio: string) => {
+  const handleServicioChange = (nuevoServicio: string) => {
     setServicioSeleccionado(nuevoServicio);
+    setStep(3);
   };
 
-  const manejarCambioFecha = (fecha: Date) => {
+  const handleFechaChange = async (fecha: Date) => {
     setFechaSeleccionada(fecha);
-    setHoraSeleccionada(null);
-    setScheduleIdSeleccionado(null);
+    setIsLoadingHorarios(true);
+    try {
+      const horariosDisponibles = await obtenerHorariosDisponibles(fecha, parseInt(servicioSeleccionado));
+      setHorarios(horariosDisponibles);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoadingHorarios(false);
+    }
+    setStep(4);
   };
 
-  const manejarSeleccionHora = (scheduleId: number, hora: string) => {
-    setScheduleIdSeleccionado(scheduleId);
+  const handleHoraChange = (hora: string, id: number) => {
     setHoraSeleccionada(hora);
+    setHorarioSeleccionadoId(id);
   };
 
   const formatearFecha = (fecha: Date) => {
@@ -114,19 +132,6 @@ const PaginaReserva: React.FC = () => {
     });
   };
 
-  const realizarReserva = async () => {
-    if (!scheduleIdSeleccionado) return;
-
-    try {
-      // Aquí iría la llamada a la API para realizar la reserva
-      setShowResumenModal(false);
-      await cargarHorariosDisponibles();
-    } catch (error) {
-      console.error('Error al realizar la reserva:', error);
-    }
-  };
-
-  // Renderizar estado de carga
   if (loading) {
     return (
       <IonPage>
@@ -140,7 +145,6 @@ const PaginaReserva: React.FC = () => {
     );
   }
 
-  // Renderizar estado de error
   if (error) {
     return (
       <IonPage>
@@ -187,7 +191,7 @@ const PaginaReserva: React.FC = () => {
           <IonCardContent>
             <IonSelect
               value={campusSeleccionado}
-              onIonChange={(e) => manejarCambioCampus(e.detail.value)}
+              onIonChange={(e) => handleCampusChange(e.detail.value)}
             >
               {campuses.map((campus) => (
                 <IonSelectOption key={campus.id} value={campus.id}>
@@ -198,65 +202,66 @@ const PaginaReserva: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
-        <IonCard>
-          <IonCardHeader>
-            <IonCardTitle>Selecciona un servicio</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <IonSelect
-              value={servicioSeleccionado}
-              onIonChange={(e) => manejarCambioServicio(e.detail.value)}
-              disabled={deportesDisponibles.length === 0}
-            >
-              {deportesDisponibles.length > 0 ? (
-                deportesDisponibles.map((deporte) => (
-                  <IonSelectOption key={deporte.id} value={deporte.name.toLowerCase()}>
+        {step >= 2 && (
+          <IonCard>
+            <IonCardHeader>
+              <IonCardTitle>Selecciona un servicio</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <IonSelect
+                value={servicioSeleccionado}
+                onIonChange={(e) => handleServicioChange(e.detail.value)}
+              >
+                {deportesDisponibles.map((deporte) => (
+                  <IonSelectOption key={deporte.id} value={deporte.name}>
                     {deporte.name}
                   </IonSelectOption>
-                ))
-              ) : (
-                <IonSelectOption value="No existe servicio deportivo">
-                  No existe servicio deportivo
-                </IonSelectOption>
-              )}
-            </IonSelect>
-          </IonCardContent>
-        </IonCard>
-
-        {servicioSeleccionado !== 'No existe servicio deportivo' && (
-          <>
-            <IonCard className="calendario-card">
-              <IonCardHeader>
-                <IonCardTitle>Selecciona una fecha</IonCardTitle>
-              </IonCardHeader>
-              <IonCardContent>
-                <Calendario 
-                  fechaSeleccionada={fechaSeleccionada} 
-                  onCambioFecha={manejarCambioFecha} 
-                />
-              </IonCardContent>
-            </IonCard>
-            
-            <IonCard className="horarios-card">
-              <IonCardHeader>
-                <IonCardTitle>Selecciona un horario</IonCardTitle>
-              </IonCardHeader>
-              <IonCardContent>
-                <HorariosDisponibles 
-                  horarios={horariosDisponibles}
-                  fechaSeleccionada={fechaSeleccionada}
-                  horaSeleccionada={horaSeleccionada}
-                  onSeleccionHora={manejarSeleccionHora}
-                />
-              </IonCardContent>
-            </IonCard>
-          </>
+                ))}
+              </IonSelect>
+            </IonCardContent>
+          </IonCard>
         )}
-        
+
+        {step >= 3 && (
+          <IonCard className="calendario-card">
+            <IonCardHeader>
+              <IonCardTitle>Selecciona una fecha</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <Calendario 
+                fechaSeleccionada={fechaSeleccionada} 
+                onCambioFecha={handleFechaChange} 
+              />
+            </IonCardContent>
+          </IonCard>
+        )}
+
+        {step >= 4 && (
+          <IonCard className="horarios-card">
+            <IonCardHeader>
+              <IonCardTitle>Selecciona un horario</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              {isLoadingHorarios ? (
+                <IonSpinner name="crescent" />
+              ) : horarios.length > 0 ? (
+                <HorariosDisponibles 
+                  horarios={horarios}
+                  horaSeleccionada={horaSeleccionada}
+                  onSeleccionHora={handleHoraChange}
+                />
+              ) : (
+                <p>No hay horarios disponibles para la fecha seleccionada.</p>
+              )}
+            </IonCardContent>
+          </IonCard>
+        )}
+
         <IonButton 
           expand="block" 
-          disabled={!scheduleIdSeleccionado || servicioSeleccionado === 'No existe servicio deportivo'} 
+          disabled={!horaSeleccionada} 
           onClick={() => setShowResumenModal(true)}
+          className="ion-margin"
         >
           <IonIcon icon={chevronForwardOutline} /> Siguiente
         </IonButton>
@@ -265,14 +270,18 @@ const PaginaReserva: React.FC = () => {
           isOpen={showRutPopover}
           onDidDismiss={() => setShowRutPopover(false)}
         >
-          <p>RUT: 19.247.979-7</p>
+          <IonContent className="ion-padding">
+            <p>RUT: 19.247.979-7</p>
+          </IonContent>
         </IonPopover>
 
         <IonPopover
           isOpen={showTokenPopover}
           onDidDismiss={() => setShowTokenPopover(false)}
         >
-          <p>Tokens disponibles: 8</p>
+          <IonContent className="ion-padding">
+            <p>Tokens disponibles: 8</p>
+          </IonContent>
         </IonPopover>
 
         <IonModal isOpen={showResumenModal} onDidDismiss={() => setShowResumenModal(false)}>
@@ -295,33 +304,26 @@ const PaginaReserva: React.FC = () => {
               <IonItem>
                 <IonLabel>
                   <h2>Tipo de servicio</h2>
-                  <p>{servicioSeleccionado === 'No existe servicio deportivo' 
-                      ? 'No existe servicio deportivo' 
-                      : servicioSeleccionado.charAt(0).toUpperCase() + servicioSeleccionado.slice(1)}
-                  </p>
+                  <p>{servicioSeleccionado}</p>
                 </IonLabel>
               </IonItem>
-              {servicioSeleccionado !== 'No existe servicio deportivo' && (
-                <>
-                  <IonItem>
-                    <IonLabel>
-                      <h2>Horario</h2>
-                      <p>{horaSeleccionada}</p>
-                    </IonLabel>
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel>
-                      <h2>Día de Reserva</h2>
-                      <p>{formatearFecha(fechaSeleccionada)}</p>
-                    </IonLabel>
-                  </IonItem>
-                </>
-              )}
+              <IonItem>
+                <IonLabel>
+                  <h2>Horario</h2>
+                  <p>{horaSeleccionada}</p>
+                </IonLabel>
+              </IonItem>
+              <IonItem>
+                <IonLabel>
+                  <h2>Día de Reserva</h2>
+                  <p>{formatearFecha(fechaSeleccionada)}</p>
+                </IonLabel>
+              </IonItem>
             </IonList>
             <IonButton 
               expand="block" 
-              disabled={!scheduleIdSeleccionado || servicioSeleccionado === 'No existe servicio deportivo'} 
-              onClick={realizarReserva}
+              className="ion-margin"
+              onClick={() => setShowResumenModal(false)}
             >
               <IonIcon icon={checkmarkOutline} /> Confirmar Reserva
             </IonButton>

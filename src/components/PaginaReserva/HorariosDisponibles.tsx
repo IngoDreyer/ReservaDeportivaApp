@@ -1,49 +1,59 @@
 import React from 'react';
-import { IonList, IonItem, IonLabel } from '@ionic/react';
-import { ReservaDisponible } from '../../services/serviciosDeportivosService';
+import { IonList, IonItem, IonLabel, IonButton } from '@ionic/react';
+import './HorariosDisponibles.css';
 
-interface Props {
-    horarios: ReservaDisponible[];
-    fechaSeleccionada: Date;
-    horaSeleccionada: string | null;
-    onSeleccionHora: (scheduleId: number, hora: string) => void;
+interface Horario {
+  id: number;
+  hora: string;
+  cancha: string;
 }
 
-const HorariosDisponibles: React.FC<Props> = ({
-    horarios,
-    fechaSeleccionada,
-    horaSeleccionada,
-    onSeleccionHora
-}) => {
-    // Filtrar horarios por fecha seleccionada
-    const horariosFiltrados = horarios.filter(horario => {
-        const fechaHorario = new Date(horario.calendar_date);
-        return fechaHorario.toDateString() === fechaSeleccionada.toDateString() &&
-               horario.availability_status === "Disponible";
-    });
+interface HorariosDisponiblesProps {
+  horarios: Horario[];
+  horaSeleccionada: string;
+  onSeleccionHora: (hora: string, id: number) => void;
+}
 
-    return (
-        <IonList>
-            {horariosFiltrados.map((horario) => (
-                <IonItem
-                    key={horario.schedule_id}
-                    button
-                    onClick={() => onSeleccionHora(horario.schedule_id, `${horario.start} - ${horario.finish}`)}
-                    color={horaSeleccionada === `${horario.start} - ${horario.finish}` ? 'primary' : undefined}
-                >
-                    <IonLabel>
-                        <h2>{horario.court_name}</h2>
-                        <p>{`${horario.start} - ${horario.finish}`}</p>
-                    </IonLabel>
-                </IonItem>
+const HorariosDisponibles: React.FC<HorariosDisponiblesProps> = ({
+  horarios,
+  horaSeleccionada,
+  onSeleccionHora,
+}) => {
+  const formatHora = (hora: string) => {
+    const [hours, minutes] = hora.split(':');
+    return `${hours}:${minutes}`;
+  };
+
+  // Agrupar horarios por cancha
+  const horariosPorCancha = horarios.reduce((acc, horario) => {
+    if (!acc[horario.cancha]) {
+      acc[horario.cancha] = [];
+    }
+    acc[horario.cancha].push(horario);
+    return acc;
+  }, {} as Record<string, Horario[]>);
+
+  return (
+    <IonList>
+      {Object.entries(horariosPorCancha).map(([cancha, horariosCancha]) => (
+        <div key={cancha}>
+          <h4 className="cancha-title">{cancha}</h4>
+          <div className="horarios-grid">
+            {horariosCancha.map((horario) => (
+              <IonButton
+                key={horario.id}
+                fill={horaSeleccionada === formatHora(horario.hora) ? 'solid' : 'outline'}
+                onClick={() => onSeleccionHora(formatHora(horario.hora), horario.id)}
+                className="horario-button"
+              >
+                {formatHora(horario.hora)}
+              </IonButton>
             ))}
-            {horariosFiltrados.length === 0 && (
-                <IonItem>
-                    <IonLabel>No hay horarios disponibles para esta fecha</IonLabel>
-                </IonItem>
-            )}
-        </IonList>
-    );
+          </div>
+        </div>
+      ))}
+    </IonList>
+  );
 };
 
 export default HorariosDisponibles;
