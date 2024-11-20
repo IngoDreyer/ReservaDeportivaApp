@@ -7,9 +7,8 @@ import {
 import { personCircleOutline, keyOutline, chevronForwardOutline, checkmarkOutline } from 'ionicons/icons';
 import Calendario from '../components/PaginaReserva/Calendario';
 import HorariosDisponibles from '../components/PaginaReserva/HorariosDisponibles';
-import { obtenerHorarios } from '../components/PaginaReserva/obtenerHorarios';
 import { useCampus, getCampusNameById } from '../services/campusService';
-import { Deporte } from '../services/serviciosDeportivosService';
+import { Deporte, getReservasDisponibles, ReservaDisponible } from '../services/serviciosDeportivosService';
 import './PaginaReserva.css';
 
 const PaginaReserva: React.FC = () => {
@@ -18,12 +17,29 @@ const PaginaReserva: React.FC = () => {
   // Estados del componente
   const [campusSeleccionado, setCampusSeleccionado] = useState<number>(0);
   const [deportesDisponibles, setDeportesDisponibles] = useState<Deporte[]>([]);
-  const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('');
+  const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('No existe servicio deportivo');
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
-  const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
+  const [horaSeleccionada, setHoraSeleccionada] = useState<string | null>(null);
+  const [scheduleIdSeleccionado, setScheduleIdSeleccionado] = useState<number | null>(null);
+  const [horariosDisponibles, setHorariosDisponibles] = useState<ReservaDisponible[]>([]);
   const [showRutPopover, setShowRutPopover] = useState(false);
   const [showTokenPopover, setShowTokenPopover] = useState(false);
   const [showResumenModal, setShowResumenModal] = useState(false);
+
+  // Cargar horarios disponibles
+  const cargarHorariosDisponibles = async () => {
+    try {
+      const horarios = await getReservasDisponibles();
+      setHorariosDisponibles(horarios);
+    } catch (error) {
+      console.error('Error al cargar horarios:', error);
+    }
+  };
+
+  // Efecto para cargar horarios cuando cambia el servicio o campus
+  useEffect(() => {
+    cargarHorariosDisponibles();
+  }, [campusSeleccionado, servicioSeleccionado]);
 
   // Establecer valores iniciales cuando se cargan los campus
   useEffect(() => {
@@ -36,9 +52,12 @@ const PaginaReserva: React.FC = () => {
           setDeportesDisponibles(deportes);
           if (deportes.length > 0) {
             setServicioSeleccionado(deportes[0].name.toLowerCase());
+          } else {
+            setServicioSeleccionado('No existe servicio deportivo');
           }
         } catch (error) {
           console.error('Error al cargar deportes iniciales:', error);
+          setServicioSeleccionado('No existe servicio deportivo');
         }
       }
     };
@@ -54,9 +73,12 @@ const PaginaReserva: React.FC = () => {
           setDeportesDisponibles(deportes);
           if (deportes.length > 0) {
             setServicioSeleccionado(deportes[0].name.toLowerCase());
+          } else {
+            setServicioSeleccionado('No existe servicio deportivo');
           }
         } catch (error) {
           console.error('Error al cargar deportes:', error);
+          setServicioSeleccionado('No existe servicio deportivo');
         }
       }
     };
@@ -74,6 +96,13 @@ const PaginaReserva: React.FC = () => {
 
   const manejarCambioFecha = (fecha: Date) => {
     setFechaSeleccionada(fecha);
+    setHoraSeleccionada(null);
+    setScheduleIdSeleccionado(null);
+  };
+
+  const manejarSeleccionHora = (scheduleId: number, hora: string) => {
+    setScheduleIdSeleccionado(scheduleId);
+    setHoraSeleccionada(hora);
   };
 
   const formatearFecha = (fecha: Date) => {
@@ -85,8 +114,17 @@ const PaginaReserva: React.FC = () => {
     });
   };
 
-  // Obtener horarios
-  const horarios = obtenerHorarios(servicioSeleccionado, fechaSeleccionada);
+  const realizarReserva = async () => {
+    if (!scheduleIdSeleccionado) return;
+
+    try {
+      // Aquí iría la llamada a la API para realizar la reserva
+      setShowResumenModal(false);
+      await cargarHorariosDisponibles();
+    } catch (error) {
+      console.error('Error al realizar la reserva:', error);
+    }
+  };
 
   // Renderizar estado de carga
   if (loading) {
@@ -168,48 +206,56 @@ const PaginaReserva: React.FC = () => {
             <IonSelect
               value={servicioSeleccionado}
               onIonChange={(e) => manejarCambioServicio(e.detail.value)}
+              disabled={deportesDisponibles.length === 0}
             >
-              {deportesDisponibles.map((deporte) => (
-                <IonSelectOption key={deporte.id} value={deporte.name.toLowerCase()}>
-                  {deporte.name}
+              {deportesDisponibles.length > 0 ? (
+                deportesDisponibles.map((deporte) => (
+                  <IonSelectOption key={deporte.id} value={deporte.name.toLowerCase()}>
+                    {deporte.name}
+                  </IonSelectOption>
+                ))
+              ) : (
+                <IonSelectOption value="No existe servicio deportivo">
+                  No existe servicio deportivo
                 </IonSelectOption>
-              ))}
+              )}
             </IonSelect>
           </IonCardContent>
         </IonCard>
 
-        <IonCard className="calendario-card">
-          <IonCardHeader>
-            <IonCardTitle>Selecciona una fecha</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <Calendario 
-              fechaSeleccionada={fechaSeleccionada} 
-              onCambioFecha={manejarCambioFecha} 
-            />
-          </IonCardContent>
-        </IonCard>
-        
-        <IonCard className="horarios-card">
-          <IonCardHeader>
-            <IonCardTitle>Selecciona un horario</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            {horarios.length > 0 ? (
-              <HorariosDisponibles 
-                horarios={horarios} 
-                horaSeleccionada={horaSeleccionada}
-                onSeleccionHora={setHoraSeleccionada}
-              />
-            ) : (
-              <p>No hay horarios disponibles para la fecha seleccionada.</p>
-            )}
-          </IonCardContent>
-        </IonCard>
+        {servicioSeleccionado !== 'No existe servicio deportivo' && (
+          <>
+            <IonCard className="calendario-card">
+              <IonCardHeader>
+                <IonCardTitle>Selecciona una fecha</IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <Calendario 
+                  fechaSeleccionada={fechaSeleccionada} 
+                  onCambioFecha={manejarCambioFecha} 
+                />
+              </IonCardContent>
+            </IonCard>
+            
+            <IonCard className="horarios-card">
+              <IonCardHeader>
+                <IonCardTitle>Selecciona un horario</IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <HorariosDisponibles 
+                  horarios={horariosDisponibles}
+                  fechaSeleccionada={fechaSeleccionada}
+                  horaSeleccionada={horaSeleccionada}
+                  onSeleccionHora={manejarSeleccionHora}
+                />
+              </IonCardContent>
+            </IonCard>
+          </>
+        )}
         
         <IonButton 
           expand="block" 
-          disabled={!horaSeleccionada} 
+          disabled={!scheduleIdSeleccionado || servicioSeleccionado === 'No existe servicio deportivo'} 
           onClick={() => setShowResumenModal(true)}
         >
           <IonIcon icon={chevronForwardOutline} /> Siguiente
@@ -249,23 +295,34 @@ const PaginaReserva: React.FC = () => {
               <IonItem>
                 <IonLabel>
                   <h2>Tipo de servicio</h2>
-                  <p>{servicioSeleccionado.charAt(0).toUpperCase() + servicioSeleccionado.slice(1)}</p>
+                  <p>{servicioSeleccionado === 'No existe servicio deportivo' 
+                      ? 'No existe servicio deportivo' 
+                      : servicioSeleccionado.charAt(0).toUpperCase() + servicioSeleccionado.slice(1)}
+                  </p>
                 </IonLabel>
               </IonItem>
-              <IonItem>
-                <IonLabel>
-                  <h2>Horario</h2>
-                  <p>{horaSeleccionada}</p>
-                </IonLabel>
-              </IonItem>
-              <IonItem>
-                <IonLabel>
-                  <h2>Día de Reserva</h2>
-                  <p>{formatearFecha(fechaSeleccionada)}</p>
-                </IonLabel>
-              </IonItem>
+              {servicioSeleccionado !== 'No existe servicio deportivo' && (
+                <>
+                  <IonItem>
+                    <IonLabel>
+                      <h2>Horario</h2>
+                      <p>{horaSeleccionada}</p>
+                    </IonLabel>
+                  </IonItem>
+                  <IonItem>
+                    <IonLabel>
+                      <h2>Día de Reserva</h2>
+                      <p>{formatearFecha(fechaSeleccionada)}</p>
+                    </IonLabel>
+                  </IonItem>
+                </>
+              )}
             </IonList>
-            <IonButton expand="block" onClick={() => setShowResumenModal(false)}>
+            <IonButton 
+              expand="block" 
+              disabled={!scheduleIdSeleccionado || servicioSeleccionado === 'No existe servicio deportivo'} 
+              onClick={realizarReserva}
+            >
               <IonIcon icon={checkmarkOutline} /> Confirmar Reserva
             </IonButton>
           </IonContent>

@@ -22,6 +22,21 @@ export interface Deporte {
     name: string;
 }
 
+export interface ReservaDisponible {
+    schedule_id: number;
+    day_name: string;
+    calendar_date: string;
+    start: string;
+    finish: string;
+    court_id: number;
+    court_name: string;
+    reservation_id: number | null;
+    run: string | null;
+    register_date: string | null;
+    reservation_state: string | null;
+    availability_status: string;
+}
+
 export const getCampus = async (): Promise<Campus[]> => {
     try {
         const response = await fetch('https://apptuiback.utalca.cl/reservaComplejoDeportivo/get_campus');
@@ -44,7 +59,7 @@ export const getDeportes = async (campusId: number): Promise<Deporte[]> => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                id: campusId  // Cambiado de id_campus a id
+                id: campusId
             })
         });
 
@@ -72,6 +87,20 @@ export const getDeportes = async (campusId: number): Promise<Deporte[]> => {
         }
     } catch (error) {
         console.error('Error in getDeportes:', error);
+        throw error;
+    }
+};
+
+export const getReservasDisponibles = async (): Promise<ReservaDisponible[]> => {
+    try {
+        const response = await fetch('https://apptuiback.utalca.cl/reservaComplejoDeportivo/get_reservas_disponibles');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        return Array.isArray(result) ? result : [];
+    } catch (error) {
+        console.error('Error fetching reservas disponibles:', error);
         throw error;
     }
 };
