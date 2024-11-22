@@ -1,17 +1,30 @@
 import React from 'react';
-import { IonList, IonItem, IonLabel, IonButton } from '@ionic/react';
+import { IonList, IonButton } from '@ionic/react';
 import './HorariosDisponibles.css';
 
-interface Horario {
-  id: number;
-  hora: string;
-  cancha: string;
+interface DisponibilidadHorario {
+  schedule_id: number;
+  day_name: string;
+  calendar_date: string;
+  start: string;
+  finish: string;
+  court_id: number;
+  court_name: string;
+  reservation_id: number | null;
+  run: string | null;
+  register_date: string | null;
+  reservation_state: string | null;
+  availability_status: string;
 }
 
 interface HorariosDisponiblesProps {
-  horarios: Horario[];
-  horaSeleccionada: string;
-  onSeleccionHora: (hora: string, id: number) => void;
+  horarios: DisponibilidadHorario[];
+  horaSeleccionada: {
+    id: number;
+    hora: string;
+    cancha: string;
+  } | null;
+  onSeleccionHora: (horario: DisponibilidadHorario) => void;
 }
 
 const HorariosDisponibles: React.FC<HorariosDisponiblesProps> = ({
@@ -19,34 +32,46 @@ const HorariosDisponibles: React.FC<HorariosDisponiblesProps> = ({
   horaSeleccionada,
   onSeleccionHora,
 }) => {
-  const formatHora = (hora: string) => {
+  // Agrupar horarios por cancha
+  const horariosPorCancha = horarios.reduce((acc, horario) => {
+    if (!acc[horario.court_name]) {
+      acc[horario.court_name] = [];
+    }
+    acc[horario.court_name].push(horario);
+    return acc;
+  }, {} as Record<string, DisponibilidadHorario[]>);
+
+  // Ordenar horarios dentro de cada cancha
+  Object.values(horariosPorCancha).forEach(horariosCancha => {
+    horariosCancha.sort((a, b) => {
+      return a.start.localeCompare(b.start);
+    });
+  });
+
+  const formatearHora = (hora: string) => {
     const [hours, minutes] = hora.split(':');
     return `${hours}:${minutes}`;
   };
 
-  // Agrupar horarios por cancha
-  const horariosPorCancha = horarios.reduce((acc, horario) => {
-    if (!acc[horario.cancha]) {
-      acc[horario.cancha] = [];
-    }
-    acc[horario.cancha].push(horario);
-    return acc;
-  }, {} as Record<string, Horario[]>);
+  if (horarios.length === 0) {
+    return <p>No hay horarios disponibles para esta fecha.</p>;
+  }
 
   return (
     <IonList>
       {Object.entries(horariosPorCancha).map(([cancha, horariosCancha]) => (
-        <div key={cancha}>
+        <div key={cancha} className="cancha-container">
           <h4 className="cancha-title">{cancha}</h4>
           <div className="horarios-grid">
             {horariosCancha.map((horario) => (
               <IonButton
-                key={horario.id}
-                fill={horaSeleccionada === formatHora(horario.hora) ? 'solid' : 'outline'}
-                onClick={() => onSeleccionHora(formatHora(horario.hora), horario.id)}
+                key={horario.schedule_id}
+                fill={horaSeleccionada?.id === horario.schedule_id ? 'solid' : 'outline'}
+                onClick={() => onSeleccionHora(horario)}
                 className="horario-button"
+                color="primary"
               >
-                {formatHora(horario.hora)}
+                {`${formatearHora(horario.start)} - ${formatearHora(horario.finish)}`}
               </IonButton>
             ))}
           </div>

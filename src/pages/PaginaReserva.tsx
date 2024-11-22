@@ -1,81 +1,65 @@
-// types.ts
-export interface DisponibilidadHorario {
-  schedule_id: number;
-  day_name: string;
-  calendar_date: string;
-  start: string;
-  finish: string;
-  court_id: number;
-  court_name: string;
-  reservation_id: number | null;
-  run: string | null;
-  register_date: string | null;
-  reservation_state: string | null;
-  availability_status: string;
-}
-
-// PaginaReserva.tsx
 import React, { useState, useEffect } from 'react';
 import { 
-  IonContent, IonPage, IonButton, IonHeader, IonToolbar,
-  IonButtons, IonIcon, IonPopover, IonModal, IonList, IonItem, IonLabel, IonCard, IonCardContent,
-  IonCardHeader, IonCardTitle, IonTitle, IonSelect, IonSelectOption, IonSpinner
+  IonContent, 
+  IonPage, 
+  IonButton, 
+  IonHeader, 
+  IonToolbar,
+  IonButtons, 
+  IonIcon, 
+  IonPopover, 
+  IonModal, 
+  IonList, 
+  IonItem, 
+  IonLabel, 
+  IonCard, 
+  IonCardContent,
+  IonCardHeader, 
+  IonCardTitle, 
+  IonTitle, 
+  IonSelect, 
+  IonSelectOption, 
+  IonSpinner, 
+  IonToast
 } from '@ionic/react';
-import { personCircleOutline, keyOutline, chevronForwardOutline, checkmarkOutline } from 'ionicons/icons';
-import Calendario from '../components/PaginaReserva/Calendario';
-import HorariosDisponibles from '../components/PaginaReserva/HorariosDisponibles';
+import { 
+  personCircleOutline, 
+  keyOutline, 
+  chevronForwardOutline, 
+  checkmarkOutline 
+} from 'ionicons/icons';
+import { DisponibilidadHorario, HorarioSeleccionado } from '../interfaces/disponibilidad.interface';
+import { ApiResponse, ReservaRequest } from '../interfaces/api.interface';
+import { API_ENDPOINTS, DEFAULT_RUT } from '../constants/api.constants';
 import { useCampus, getCampusNameById } from '../services/campusService';
 import { Deporte } from '../services/serviciosDeportivosService';
+import Calendario from '../components/PaginaReserva/Calendario';
+import HorariosDisponibles from '../components/PaginaReserva/HorariosDisponibles';
 import './PaginaReserva.css';
 
 const PaginaReserva: React.FC = () => {
   const { campuses, loading, error, loadDeportes } = useCampus();
   
+  // Estados
   const [step, setStep] = useState(1);
-  const [campusSeleccionado, setCampusSeleccionado] = useState<number>(0);
+  const [campusSeleccionado, setCampusSeleccionado] = useState<number | null>(null);
   const [deportesDisponibles, setDeportesDisponibles] = useState<Deporte[]>([]);
   const [servicioSeleccionado, setServicioSeleccionado] = useState<string>('');
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
-  const [horarios, setHorarios] = useState<Array<{id: number, hora: string, cancha: string}>>([]);
-  const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
+  const [horarios, setHorarios] = useState<DisponibilidadHorario[]>([]);
+  const [horaSeleccionada, setHoraSeleccionada] = useState<HorarioSeleccionado | null>(null);
   const [isLoadingHorarios, setIsLoadingHorarios] = useState(false);
   const [showRutPopover, setShowRutPopover] = useState(false);
   const [showTokenPopover, setShowTokenPopover] = useState(false);
   const [showResumenModal, setShowResumenModal] = useState(false);
-  const [horarioSeleccionadoId, setHorarioSeleccionadoId] = useState<number | null>(null);
-
-  const obtenerHorariosDisponibles = async (fecha: Date, servicioId: number) => {
-    try {
-      const response = await fetch('https://apptuiback.utalca.cl/reservaComplejoDeportivo/get_reservas_disponibles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fecha: fecha.toISOString(),
-          servicioId: servicioId
-        })
-      });
-      
-      const data: DisponibilidadHorario[] = await response.json();
-      return data.filter(horario => horario.availability_status === 'Disponible')
-                .map(horario => ({
-                  id: horario.schedule_id,
-                  hora: horario.start,
-                  cancha: horario.court_name
-                }));
-    } catch (error) {
-      console.error('Error al obtener horarios:', error);
-      return [];
-    }
-  };
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     const inicializarCampus = async () => {
-      if (campuses.length > 0 && campusSeleccionado === 0) {
-        const primerCampus = campuses[0].id;
-        setCampusSeleccionado(primerCampus);
-        await loadDeportesForCampus(primerCampus);
+      if (campuses.length > 0 && !campusSeleccionado) {
+        setDeportesDisponibles([]);
+        setServicioSeleccionado('');
       }
     };
     inicializarCampus();
@@ -85,11 +69,109 @@ const PaginaReserva: React.FC = () => {
     try {
       const deportes = await loadDeportes(campusId);
       setDeportesDisponibles(deportes);
-      if (deportes.length > 0) {
-        setServicioSeleccionado(deportes[0].name);
-      }
     } catch (error) {
       console.error('Error al cargar deportes:', error);
+      setDeportesDisponibles([]);
+    }
+  };
+
+  const obtenerHorariosDisponibles = async (fecha: Date) => {
+    setIsLoadingHorarios(true);
+    try {
+      const formattedDate = fecha.toISOString().split('T')[0];
+      
+      const requestData = {
+        fecha: formattedDate,
+        id: 1,
+        sport_id: 1
+      };
+
+      const response = await fetch(API_ENDPOINTS.GET_RESERVAS_DISPONIBLES, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la petición');
+      }
+
+      const responseData: ApiResponse = await response.json();
+      
+      if (responseData.status === 200 && Array.isArray(responseData.data)) {
+        const horariosDelDia = responseData.data.filter(horario => {
+          const horarioDate = new Date(horario.calendar_date);
+          const esHorarioDelDia = horarioDate.toDateString() === fecha.toDateString();
+          const esServicioSeleccionado = horario.court_name.toLowerCase().includes(servicioSeleccionado.toLowerCase());
+          
+          return esHorarioDelDia && esServicioSeleccionado;
+        });
+
+        setHorarios(horariosDelDia);
+      } else {
+        console.error('Formato de respuesta inválido:', responseData);
+        setHorarios([]);
+      }
+
+    } catch (error) {
+      console.error('Error al obtener horarios:', error);
+      setHorarios([]);
+    } finally {
+      setIsLoadingHorarios(false);
+    }
+  };
+
+  const realizarReserva = async () => {
+    if (!horaSeleccionada) {
+      alert('Por favor selecciona un horario');
+      return;
+    }
+  
+    try {
+      const formattedDate = fechaSeleccionada.toISOString().split('T')[0];
+      
+      const reservaData: ReservaRequest = {
+        run: DEFAULT_RUT,
+        register_date: formattedDate,
+        schedule_id: horaSeleccionada.id,
+      };
+  
+      console.log('Datos de reserva a enviar:', reservaData); // Para debug
+  
+      const response = await fetch(API_ENDPOINTS.POST_RESERVA, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+          },
+          body: JSON.stringify(reservaData)
+      });
+  
+      const result = await response.json();
+    console.log('Respuesta de la reserva:', result); // Para debug
+
+    if (result.data == 'Ya existe una reserva para esa fecha y horario' ) {
+      setToastMessage('Ya existe una reserva para esa fecha y horario');
+      setShowToast(true);
+    } else if (response.ok && result.status === 200) {
+      setShowResumenModal(false);
+      setToastMessage('Reserva Confirmada');
+      setShowToast(true);
+      // Resetear estados
+      setHoraSeleccionada(null);
+      setHorarios([]);
+      setCampusSeleccionado(null);
+      setServicioSeleccionado('');
+      setStep(1);
+    } else {
+      throw new Error(result.message || 'Error al realizar la reserva');
+    }
+  } catch (error) {
+      console.error('Error al realizar la reserva:', error);
+      alert('Error al procesar la reserva: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     }
   };
 
@@ -97,30 +179,28 @@ const PaginaReserva: React.FC = () => {
     setCampusSeleccionado(nuevoId);
     await loadDeportesForCampus(nuevoId);
     setStep(2);
+    setServicioSeleccionado('');
   };
 
   const handleServicioChange = (nuevoServicio: string) => {
     setServicioSeleccionado(nuevoServicio);
+    setHoraSeleccionada(null);
+    setHorarios([]);
     setStep(3);
   };
 
   const handleFechaChange = async (fecha: Date) => {
     setFechaSeleccionada(fecha);
-    setIsLoadingHorarios(true);
-    try {
-      const horariosDisponibles = await obtenerHorariosDisponibles(fecha, parseInt(servicioSeleccionado));
-      setHorarios(horariosDisponibles);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setIsLoadingHorarios(false);
-    }
+    await obtenerHorariosDisponibles(fecha);
     setStep(4);
   };
 
-  const handleHoraChange = (hora: string, id: number) => {
-    setHoraSeleccionada(hora);
-    setHorarioSeleccionadoId(id);
+  const handleHoraChange = (horarioCompleto: DisponibilidadHorario) => {
+    setHoraSeleccionada({
+      id: horarioCompleto.schedule_id,
+      hora: `${horarioCompleto.start} - ${horarioCompleto.finish}`,
+      cancha: horarioCompleto.court_name
+    });
   };
 
   const formatearFecha = (fecha: Date) => {
@@ -192,6 +272,7 @@ const PaginaReserva: React.FC = () => {
             <IonSelect
               value={campusSeleccionado}
               onIonChange={(e) => handleCampusChange(e.detail.value)}
+              placeholder="Selecciona un campus"
             >
               {campuses.map((campus) => (
                 <IonSelectOption key={campus.id} value={campus.id}>
@@ -202,25 +283,25 @@ const PaginaReserva: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
-        {step >= 2 && (
-          <IonCard>
-            <IonCardHeader>
-              <IonCardTitle>Selecciona un servicio</IonCardTitle>
-            </IonCardHeader>
-            <IonCardContent>
-              <IonSelect
-                value={servicioSeleccionado}
-                onIonChange={(e) => handleServicioChange(e.detail.value)}
-              >
-                {deportesDisponibles.map((deporte) => (
-                  <IonSelectOption key={deporte.id} value={deporte.name}>
-                    {deporte.name}
-                  </IonSelectOption>
-                ))}
-              </IonSelect>
-            </IonCardContent>
-          </IonCard>
-        )}
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Selecciona un servicio</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <IonSelect
+              value={servicioSeleccionado}
+              onIonChange={(e) => handleServicioChange(e.detail.value)}
+              placeholder="Selecciona un servicio"
+              disabled={!campusSeleccionado}
+            >
+              {deportesDisponibles.map((deporte) => (
+                <IonSelectOption key={deporte.id} value={deporte.name}>
+                  {deporte.name}
+                </IonSelectOption>
+              ))}
+            </IonSelect>
+          </IonCardContent>
+        </IonCard>
 
         {step >= 3 && (
           <IonCard className="calendario-card">
@@ -243,7 +324,10 @@ const PaginaReserva: React.FC = () => {
             </IonCardHeader>
             <IonCardContent>
               {isLoadingHorarios ? (
-                <IonSpinner name="crescent" />
+                <div className="loading-container">
+                  <IonSpinner name="crescent" />
+                  <p>Cargando horarios disponibles...</p>
+                </div>
               ) : horarios.length > 0 ? (
                 <HorariosDisponibles 
                   horarios={horarios}
@@ -298,7 +382,7 @@ const PaginaReserva: React.FC = () => {
               <IonItem>
                 <IonLabel>
                   <h2>Campus</h2>
-                  <p>{getCampusNameById(campuses, campusSeleccionado)}</p>
+                  <p>{getCampusNameById(campuses, campusSeleccionado || 0)}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
@@ -309,8 +393,8 @@ const PaginaReserva: React.FC = () => {
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>Horario</h2>
-                  <p>{horaSeleccionada}</p>
+                  <h2>Horario y Cancha</h2>
+                  <p>{horaSeleccionada ? `${horaSeleccionada.hora} - ${horaSeleccionada.cancha}` : ''}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
@@ -319,16 +403,37 @@ const PaginaReserva: React.FC = () => {
                   <p>{formatearFecha(fechaSeleccionada)}</p>
                 </IonLabel>
               </IonItem>
+              <IonItem>
+                <IonLabel>
+                  <h2>RUT</h2>
+                  <p>19.247.979-7</p>
+                </IonLabel>
+              </IonItem>
             </IonList>
             <IonButton 
               expand="block" 
               className="ion-margin"
-              onClick={() => setShowResumenModal(false)}
+              onClick={realizarReserva}
             >
               <IonIcon icon={checkmarkOutline} /> Confirmar Reserva
             </IonButton>
           </IonContent>
         </IonModal>
+
+        <IonToast
+          isOpen={showToast}
+          onDidDismiss={() => setShowToast(false)}
+          message={toastMessage}
+          duration={2000}
+          position="middle"
+          color={toastMessage === 'Reserva Confirmada' ? 'success' : 'warning'}
+          buttons={[
+            {
+              icon: 'checkmark-outline',
+              role: 'cancel'
+            }
+          ]}
+        />
       </IonContent>
     </IonPage>
   );
