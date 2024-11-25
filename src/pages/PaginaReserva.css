@@ -10,13 +10,6 @@ body {
   background-color: #f4f4f4;
 }
 
-ion-title {
-  font-family: 'Geologica', sans-serif;
-  font-weight: 700;
-  color: var(--ion-color-primary);
-  text-align: center;
-}
-
 ion-header ion-toolbar {
   --background: #ffffff;
 }
@@ -282,7 +275,6 @@ ion-select::part(text) {
   font-size: 32px;
   color: #C10230;
   margin: 0;
-  line-height: 1.7;
   margin-left: 3.5vh;
   text-align: left;
 }
@@ -293,7 +285,6 @@ ion-select::part(text) {
   font-size: 32px;
   color: #C10230;
   margin: 0;
-  line-height: 1.2;
   margin-right: 3.5vh;
   position: relative;
   left: 30%; /* Esto moverá "Deportiva_" para que empiece donde termina "Reserva" */

@@ -68,8 +68,11 @@ const HorariosDisponibles: React.FC<HorariosDisponiblesProps> = ({
                 key={horario.schedule_id}
                 fill={horaSeleccionada?.id === horario.schedule_id ? 'solid' : 'outline'}
                 onClick={() => onSeleccionHora(horario)}
-                className="horario-button"
+                className={`horario-button ${
+                  horario.availability_status === 'No Disponible' ? 'horario-no-disponible' : ''
+                }`}
                 color="primary"
+                disabled={horario.availability_status === 'No Disponible'}
               >
                 {`${formatearHora(horario.start)} - ${formatearHora(horario.finish)}`}
               </IonButton>
