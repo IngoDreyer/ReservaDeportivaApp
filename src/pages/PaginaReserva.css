@@ -75,7 +75,7 @@ h2 {
 }
 
 .siguiente-button {
-  --background: var(--ion-color-primary);
+  --background: var(#C10230);
   --color: var(--ion-color-primary-contrast);
   margin-top: 16px;
 }
@@ -270,18 +270,14 @@ ion-select::part(text) {
 }
 
 .main-title {
-  font-size: 42px;
   color: #C10230;
-  margin: 0;
-  margin-left: 20%;
-  text-align: Center;
+  margin-left: 3.5vh;
+  text-align: left;
 }
 
 .main-title_ {
-  font-size: 42px;
-  color: #C10230;
-  margin-left: 10%;
-  position: relative;
-  left: 30%; 
-  margin-top: 0px; 
+color: #C10230;
+margin-left: 20%;
+margin-right: 3.5vh;
+text-align: right;
 }

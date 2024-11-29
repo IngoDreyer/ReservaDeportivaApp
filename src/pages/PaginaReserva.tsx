@@ -539,24 +539,6 @@ const PaginaReserva: React.FC = () => {
           </>
         )}
 
-        <IonPopover
-          isOpen={showRutPopover}
-          onDidDismiss={() => setShowRutPopover(false)}
-        >
-          <IonContent className="ion-padding">
-            <p>RUT: 19.247.979-7</p>
-          </IonContent>
-        </IonPopover>
-
-        <IonPopover
-          isOpen={showTokenPopover}
-          onDidDismiss={() => setShowTokenPopover(false)}
-        >
-          <IonContent className="ion-padding">
-            <p>Tokens disponibles: 8</p>
-          </IonContent>
-        </IonPopover>
-
         <IonModal isOpen={showResumenModal} onDidDismiss={() => setShowResumenModal(false)}>
           <IonHeader>
             <IonToolbar>
