@@ -108,7 +108,7 @@ const PaginaReserva: React.FC = () => {
     try {
       setLoadingHistorial(true);
       setErrorHistorial(null);
-      const data = await getReservasByRun('19247979');
+      const data = await getReservasByRun('19247979'); //rut por defecto
       
       // Obtener fecha actual en formato ISO y extraer solo la fecha
       const today = new Date().toISOString().split('T')[0];
@@ -445,7 +445,7 @@ const PaginaReserva: React.FC = () => {
                         <IonGrid>
                           <IonRow class="ion-align-items-center">
                             <IonCol size="4" className="ion-text-wrap">
-                              <strong>{reserva.sport}</strong>
+                              <strong>{reserva.court}</strong>
                             </IonCol>
                             <IonCol size="4" className="ion-text-center">
                               {formatDate(reserva.register_date)}
@@ -469,8 +469,8 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={footballOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Tipo de Cancha</h2>
-                                  <p>{reserva.sport}</p>
+                                  <h1>Tipo de Cancha</h1>
+                                  <p>{reserva.court}</p>
                                 </IonLabel>
                               </IonItem>
                             </IonCol>
@@ -481,7 +481,7 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={locationOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Campus</h2>
+                                  <h1>Campus</h1>
                                   <p>{reserva.headquarter}</p>
                                 </IonLabel>
                               </IonItem>
@@ -493,7 +493,7 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={calendarOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Fecha</h2>
+                                  <h1>Fecha</h1>
                                   <p>{formatDate(reserva.register_date)}</p>
                                 </IonLabel>
                               </IonItem>
@@ -502,8 +502,17 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={timeOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Hora</h2>
+                                  <h1>Hora Inicio</h1>
                                   <p>{reserva.start}</p>
+                                </IonLabel>
+                              </IonItem>
+                            </IonCol>
+                            <IonCol size="6">
+                              <IonItem lines="none">
+                                <IonIcon icon={timeOutline} slot="start" />
+                                <IonLabel>
+                                  <h1>Hora Termino</h1>
+                                  <p>{reserva.finish}</p>
                                 </IonLabel>
                               </IonItem>
                             </IonCol>
@@ -552,25 +561,25 @@ const PaginaReserva: React.FC = () => {
             <IonList>
               <IonItem>
                 <IonLabel>
-                  <h2>Campus</h2>
+                  <h1>Campus</h1>
                   <p>{getCampusNameById(campuses, campusSeleccionado || 0)}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>Tipo de servicio</h2>
+                  <h1>Tipo de servicio</h1>
                   <p>{servicioSeleccionado}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>Horario y Cancha</h2>
+                  <h1>Horario y Cancha</h1>
                   <p>{horaSeleccionada ? `${horaSeleccionada.hora} - ${horaSeleccionada.cancha}` : ''}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>Día de Reserva</h2>
+                  <h1>Día de Reserva</h1>
                   <p>{fechaSeleccionada.toLocaleDateString('es-ES', { 
                     weekday: 'long', 
                     year: 'numeric', 
