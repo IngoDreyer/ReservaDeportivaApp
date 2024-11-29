@@ -590,7 +590,7 @@ const PaginaReserva: React.FC = () => {
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>RUT</h2>
+                  <h1>RUT</h1>
                   <p>19.247.979-7</p>
                 </IonLabel>
               </IonItem>
