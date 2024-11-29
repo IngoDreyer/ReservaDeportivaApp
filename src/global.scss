@@ -1,0 +1,252 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/react/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/react/css/normalize.css";
+@import "@ionic/react/css/structure.css";
+@import "@ionic/react/css/typography.css";
+@import "@ionic/react/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/react/css/padding.css";
+@import "@ionic/react/css/float-elements.css";
+@import "@ionic/react/css/text-alignment.css";
+@import "@ionic/react/css/text-transformation.css";
+@import "@ionic/react/css/flex-utils.css";
+
+
+
+@font-face {
+    font-family: "Swiss";
+    src: url("../src/assets/fonts/Barlow-Regular.ttf");
+  }
+  @font-face {
+    font-family: "Barlow";
+    src: url("../src/assets/fonts/Barlow-Regular.ttf");
+  }
+  @font-face {
+    font-family: "Barlow Semi Bold";
+    src: url("../src/assets/fonts/Barlow-SemiBold.ttf");
+  }
+  @font-face {
+    font-family: "Swiss bold italic";
+    src: url("../src/assets/fonts/SWISSBI.TTF");
+  }
+  @font-face {
+    font-family: "Swiss bold";
+    src: url("../src/assets/fonts/SWISSB.TTF");
+  }
+  @font-face {
+    font-family: "Swiss Light";
+    src: url("../src/assets/fonts/SWISSL.TTF");
+  }
+  @font-face {
+    font-family: "Swiss Light Italic";
+    src: url("../src/assets/fonts/SWISSLI.TTF");
+  }
+  @font-face {
+    font-family: "Swiss";
+    src: url("/beneficios/assets/fonts/Swiss_721_Light.OTF");
+  }
+  @font-face {
+    font-family: "Swiss Medium";
+    src: url("../src/assets/fonts/Swiss_721_Medium.otf");
+  }
+  @font-face {
+    font-family: "Geologica Bold"; 
+    src: url("../src/assets/fonts/Geologica-ExtraBold.ttf");
+  }
+  @font-face {
+    font-family: "Geologica"; 
+    src: url("../src/assets/fonts/Geologica-Regular.ttf");
+  }
+  @font-face {
+    font-family: "Geologica Medium"; 
+    src: url("../src/assets/fonts/Geologica-Medium.ttf");
+  }
+
+.header-md ion-toolbar.md {
+    padding-top: 30px;
+}
+// .header-ios ion-toolbar.ios {
+//     padding-top: 6px;
+// }
+ion-datetime,
+ion-select,
+.native-input,
+.native-textarea {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-radius: 8px !important;
+    padding-left: 9px !important;
+    border: 1px solid #e6e6e6 !important;
+}
+.searchbar-input.sc-ion-searchbar-md {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-radius: 8px !important;
+    border: 1px solid #e6e6e6 !important;
+}
+.label-floating {
+    padding-left: 9px !important;
+}
+.label-stacked.sc-ion-label-md-h {
+    margin-bottom: 7px;
+}
+.sc-ion-buttons-md-s .button {
+    text-transform: capitalize;
+}
+.label-floating.sc-ion-label-md-h {
+    -webkit-transform: translate3d(0, 150%, 0);
+    transform: translate3d(0, 150%, 0);
+}
+.item-has-focus.label-floating.sc-ion-label-md-h,
+.item-has-focus .label-floating.sc-ion-label-md-h,
+.item-has-placeholder.label-floating.sc-ion-label-md-h,
+.item-has-placeholder .label-floating.sc-ion-label-md-h,
+.item-has-value.label-floating.sc-ion-label-md-h,
+.item-has-value .label-floating.sc-ion-label-md-h {
+    -webkit-transform: translate3d(0, 20%, 0) scale(0.75);
+    transform: translate3d(0, 20%, 0) scale(0.75);
+}
+.segment-button-indicator-background {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+ion-backdrop {
+    background: var(ion-backdrop-background) !important;
+}
+
+.traslucent-fab-list {
+    --background: var(--ion-color-searchbar-background);
+    background: var(--ion-color-searchbar-background);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    --backdrop-filter: saturate(180%) blur(10px);
+    backdrop-filter: saturate(180%) blur(10px);
+    /*margin: 0px 56px 0px 0px;*/
+    padding: 0px 20px;
+    border-radius: 30px;
+}
+
+.search-toolbar {
+    --background: var(--ion-color-searchbar-background);
+    background: var(--ion-color-searchbar-background);
+    -webkit-backdrop-filter: saturate(180%) blur(10px);
+    --backdrop-filter: saturate(180%) blur(10px);
+    backdrop-filter: saturate(180%) blur(10px);
+    --padding-top: 10px;
+    padding-top: 10px;
+}
+/*.toolbar-background*/
+
+.search-toolbar ion-item {
+    --background: transparent !important;
+    background: transparent !important;
+}
+
+.searchbar-page {
+    --padding-top: 67px !important;
+}
+.item-native {
+    padding-left: 0px !important;
+}
+
+.QRclass,
+.QRclass img {
+    width: 60%;
+    margin: 15% 20%;
+}
+.info_badge {
+    height: auto;
+    margin: 0px;
+    margin-left: 4px;
+    padding: 4px 4px;
+    border: 1pt solid;
+}
+.swiper-pagination-bullet-active {
+    background: rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+}
+.swiper-pagination-fraction,
+.swiper-pagination-custom,
+.swiper-container-horizontal > .swiper-pagination-bullets {
+    bottom: 30px !important;
+}
+
+.popover-bloque-horario .popover-content {
+    width: calc(100% - 20px) !important;
+    left: 10px !important;
+}
+
+.sc-ion-buttons-md-h {
+    margin-left: -12px !important;
+}
+.menu-button.md {
+    margin-left: 12px !important;
+}
+
+.custom-back-button-icon.md {
+    font-size: 24px;
+    margin: 0px 0px 0px -6px;
+}
+.custom-back-button-icon.ios {
+    font-size: 31px;
+    margin: 0px -3px 0px -12px;
+}
+
+.button-native {
+    border-width: 1px !important;
+}
+/*
+.lista-modulo {
+    height: auto;
+    transition: height 0.99s ease-in-out;
+}
+.lista-modulo.collapsed {
+    height: 46px;
+}
+*/
+.lista-modulo .list-header-lines-full {
+    min-height: 32px;
+}
+.lista-modulo .list-header-lines-full.ios {
+    margin-top: -17px;
+}
+.lista-modulo .item-native {
+    min-height: 40px !important;
+    height: 40px !important;
+    max-height: 40px !important;
+}
+
+ion-card-content td {
+    min-width: 73px;
+}
+
+/*Para vista de notas */
+.segment-toolbar .toolbar-container {
+    height: 20px;
+}
+
+.toast-content {
+    max-width: 80% !important;
+}
+
+.md.toast-in-top {
+    backdrop-filter: blur(4px);
+    background-color: rgba(37, 42, 46, 0.2);
+    top: 28px!important;
+}
+
+.novedad-modal {
+    --max-height: 50vh;
+    align-items: flex-end;
+}

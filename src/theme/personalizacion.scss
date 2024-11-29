@@ -1,0 +1,54 @@
+//@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap');
+
+:root {
+  --ion-color-primary: #C10230;
+  --ion-color-primary-dark: #C10230;
+  --ion-color-slide-par: var(--ion-color-primary);
+  --ion-color-slide-impar: var(
+    --ion-color-primary
+  ); //COLOR DE LA SLIDE PAR DE LA PRESENTACIÓN
+  --ion-color-header: var(--ion-color-primary); //CAMBIAR EL HEADER DE LA APP
+  --ion-color-header-contrast: #ffffff; //CAMBIA EL COLOR DE ICONOS Y LETRAS DEL HEADER
+  --ion-color-company-logo: var(--ion-color-primary); //COLOR DEL LOGO DE LA APP
+
+  ion-menu {
+    ion-item {
+      ion-label {
+        font-family: "Swiss" !important; //PARA QUE LA FUENTE DEL MENU SEA IGUAL EN ANDROID Y iOS
+        font-weight: 400 !important;
+      }
+    }
+  }
+
+  p {
+    text-align: justify;
+    font-family: "Swiss";
+  }
+  h2{
+    font-family: 'Geologica Bold';
+    font-size: 5.5vh;
+    line-height: 0.5
+  }
+  h4 {
+    font-family: "Swiss Medium";
+  }
+
+  b {
+    font-family: "Swiss bold";
+  }
+
+  ion-button {
+    font-family: "Swiss Medium";
+  }
+
+  ion-card {
+    font-family: "Swiss";
+  }
+
+  small {
+    font-family: "Swiss";
+  }
+  ion-label {
+    font-family: "Swiss";
+  }
+}
