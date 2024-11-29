@@ -270,23 +270,18 @@ ion-select::part(text) {
 }
 
 .main-title {
-  font-family: 'Helvetica', Arial, sans-serif;
-  font-weight: bold;
-  font-size: 32px;
+  font-size: 42px;
   color: #C10230;
   margin: 0;
-  margin-left: 3.5vh;
-  text-align: left;
+  margin-left: 20%;
+  text-align: Center;
 }
 
 .main-title_ {
-  font-family: 'Helvetica', Arial, sans-serif;
-  font-weight: bold;
-  font-size: 32px;
+  font-size: 42px;
   color: #C10230;
-  margin: 0;
-  margin-right: 3.5vh;
+  margin-left: 10%;
   position: relative;
-  left: 30%; /* Esto moverá "Deportiva_" para que empiece donde termina "Reserva" */
-  margin-top: -10px; /* Ajusta el espacio vertical entre las palabras */
+  left: 30%; 
+  margin-top: 0px; 
 }
