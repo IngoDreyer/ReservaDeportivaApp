@@ -75,6 +75,15 @@ const PaginaReserva: React.FC = () => {
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [errorHistorial, setErrorHistorial] = useState<string | null>(null);
 
+  const getQueryParam = (param: string) => {
+    const params = new URLSearchParams(location.search);
+    return params.get(param);
+  }
+
+  const rut = parseInt(getQueryParam('rut') || '0');
+  const DEFAULT_RUT = rut;
+
+  console.log(DEFAULT_RUT);
   useEffect(() => {
     const inicializarCampus = async () => {
       if (campuses.length > 0 && !campusSeleccionado) {
@@ -108,8 +117,7 @@ const PaginaReserva: React.FC = () => {
     try {
       setLoadingHistorial(true);
       setErrorHistorial(null);
-      const data = await getReservasByRun('19247979'); //rut por defecto
-      
+      const data = await getReservasByRun(rut); //Rut obtenido de la URL ?=19247979
       // Obtener fecha actual en formato ISO y extraer solo la fecha
       const today = new Date().toISOString().split('T')[0];
   
@@ -453,11 +461,6 @@ const PaginaReserva: React.FC = () => {
                             <IonCol size="3" className="ion-text-center">
                               {reserva.start}
                             </IonCol>
-                            <IonCol size="1">
-                              <IonBadge color={reserva.state ? 'success' : 'medium'}>
-                                {reserva.state ? 'A' : 'I'}
-                              </IonBadge>
-                            </IonCol>
                           </IonRow>
                         </IonGrid>
                       </IonItem>
@@ -586,12 +589,6 @@ const PaginaReserva: React.FC = () => {
                     month: 'long', 
                     day: 'numeric' 
                   })}</p>
-                </IonLabel>
-              </IonItem>
-              <IonItem>
-                <IonLabel>
-                  <h1>RUT</h1>
-                  <p>19.247.979-7</p>
                 </IonLabel>
               </IonItem>
             </IonList>
