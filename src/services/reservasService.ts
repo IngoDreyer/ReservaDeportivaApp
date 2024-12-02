@@ -1,4 +1,3 @@
-// Interfaces existentes...
 export interface Reserva {
     id: number;
     usuario_id: number;

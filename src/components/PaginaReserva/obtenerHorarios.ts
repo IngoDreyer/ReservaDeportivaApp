@@ -21,11 +21,11 @@ export function obtenerHorarios(servicio: string, fecha: Date): string[] {
     ];
   
     switch(servicio) {
-      case 'tenis':
+      case 'Tenis':
         return horariosDisponiblesTenis;
-      case 'futbol':
+      case 'Futbol':
         return horariosDisponiblesFutbol;
-      case 'gimnasio':
+      case 'Gimnasio':
         return horariosDisponiblesGimnasio;
       default:
         return horariosDisponibles;

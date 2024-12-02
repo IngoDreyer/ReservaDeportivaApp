@@ -17,6 +17,8 @@ interface DisponibilidadHorario {
   availability_status: string;
 }
 
+
+
 interface HorariosDisponiblesProps {
   horarios: DisponibilidadHorario[];
   horaSeleccionada: {

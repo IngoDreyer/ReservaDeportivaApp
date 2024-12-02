@@ -1,4 +1,5 @@
 export interface HistorialReserva {
+    id: number;
     run: number;
     creation: string;
     register_date: string;

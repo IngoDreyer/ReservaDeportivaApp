@@ -69,11 +69,20 @@ const PaginaReserva: React.FC = () => {
   const [showResumenModal, setShowResumenModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [cancellingReservationId, setCancellingReservationId] = useState<number | null>(null);
 
   // Estados para historial
   const [reservasHistorial, setReservasHistorial] = useState<HistorialReserva[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [errorHistorial, setErrorHistorial] = useState<string | null>(null);
+
+  const getQueryParam = (param: string) => {
+    const params = new URLSearchParams(location.search);
+    return params.get(param);
+  }
+
+  const rut = parseInt(getQueryParam('rut') || '0');
+  const DEFAULT_RUT = rut;
 
   useEffect(() => {
     const inicializarCampus = async () => {
@@ -104,31 +113,56 @@ const PaginaReserva: React.FC = () => {
     }
   };
 
+  const handleCancelReservation = async (reservationId: number) => {
+    try {
+      setCancellingReservationId(reservationId);
+      
+      const response = await fetch('https://apptuiback.utalca.cl/reservaComplejoDeportivo/actualizar_reserva', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          id: reservationId
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setToastMessage('Reserva cancelada exitosamente');
+        setShowToast(true);
+        await loadHistorial();
+      } else {
+        throw new Error(result.message || 'Error al cancelar la reserva');
+      }
+    } catch (error) {
+      console.error('Error al cancelar la reserva:', error);
+      setToastMessage('Error al cancelar la reserva. Por favor intente nuevamente.');
+      setShowToast(true);
+    } finally {
+      setCancellingReservationId(null);
+    }
+  };
+
   const loadHistorial = async () => {
     try {
       setLoadingHistorial(true);
       setErrorHistorial(null);
-      const data = await getReservasByRun('19247979');
-      
-      // Obtener fecha actual en formato ISO y extraer solo la fecha
+      const data = await getReservasByRun(rut);
       const today = new Date().toISOString().split('T')[0];
   
-      // Filtrar reservas futuras y de hoy
       const filteredData = data.filter(reserva => {
-        // Extraer solo la fecha del timestamp de la reserva
         const reservaDate = reserva.register_date.split('T')[0];
-        console.log('Fecha reserva:', reservaDate, 'Hoy:', today); // Para debugging
         return reservaDate >= today;
       });
   
-      // Ordenar las reservas filtradas
       const sortedData = filteredData.sort((a, b) => {
         if (a.state !== b.state) return b.state ? 1 : -1;
-        
         return new Date(a.register_date).getTime() - new Date(b.register_date).getTime();
       });
   
-      console.log('Datos filtrados:', filteredData); // Para debugging
       setReservasHistorial(sortedData);
     } catch (err) {
       setErrorHistorial('Error al cargar las reservas');
@@ -138,6 +172,7 @@ const PaginaReserva: React.FC = () => {
       setLoadingHistorial(false);
     }
   };
+
   const handleSegmentChange = (e: CustomEvent) => {
     const newSegment = e.detail.value;
     setSelectedSegment(newSegment);
@@ -241,7 +276,6 @@ const PaginaReserva: React.FC = () => {
         setShowResumenModal(false);
         setToastMessage('Reserva Confirmada');
         setShowToast(true);
-        // Resetear estados
         setHoraSeleccionada(null);
         setHorarios([]);
         setCampusSeleccionado(null);
@@ -445,18 +479,13 @@ const PaginaReserva: React.FC = () => {
                         <IonGrid>
                           <IonRow class="ion-align-items-center">
                             <IonCol size="4" className="ion-text-wrap">
-                              <strong>{reserva.sport}</strong>
+                              <strong>{reserva.court}</strong>
                             </IonCol>
                             <IonCol size="4" className="ion-text-center">
                               {formatDate(reserva.register_date)}
                             </IonCol>
                             <IonCol size="3" className="ion-text-center">
                               {reserva.start}
-                            </IonCol>
-                            <IonCol size="1">
-                              <IonBadge color={reserva.state ? 'success' : 'medium'}>
-                                {reserva.state ? 'A' : 'I'}
-                              </IonBadge>
                             </IonCol>
                           </IonRow>
                         </IonGrid>
@@ -469,8 +498,8 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={footballOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Tipo de Cancha</h2>
-                                  <p>{reserva.sport}</p>
+                                  <h1>Tipo de Cancha</h1>
+                                  <p>{reserva.court}</p>
                                 </IonLabel>
                               </IonItem>
                             </IonCol>
@@ -481,7 +510,7 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={locationOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Campus</h2>
+                                  <h1>Campus</h1>
                                   <p>{reserva.headquarter}</p>
                                 </IonLabel>
                               </IonItem>
@@ -493,7 +522,7 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={calendarOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Fecha</h2>
+                                  <h1>Fecha</h1>
                                   <p>{formatDate(reserva.register_date)}</p>
                                 </IonLabel>
                               </IonItem>
@@ -502,10 +531,26 @@ const PaginaReserva: React.FC = () => {
                               <IonItem lines="none">
                                 <IonIcon icon={timeOutline} slot="start" />
                                 <IonLabel>
-                                  <h2>Hora</h2>
+                                  <h1>Hora Inicio</h1>
                                   <p>{reserva.start}</p>
                                 </IonLabel>
                               </IonItem>
+                            </IonCol>
+                            <IonCol size="6">
+                              <IonItem lines="none">
+                                <IonIcon icon={timeOutline} slot="start" />
+                                <IonLabel>
+                                  <h1>Hora Termino</h1>
+                                  <p>{reserva.finish}</p>
+                                </IonLabel>
+                              </IonItem>
+                            </IonCol>
+                          </IonRow>
+                          <IonRow class="ion-align-items-center">
+                            <IonCol size="12" className="ion-text-center">
+                              <IonBadge color={reserva.state ? 'success' : 'medium'}>
+                                {reserva.state ? 'Activa' : 'Cancelada'}
+                              </IonBadge>
                             </IonCol>
                           </IonRow>
 
@@ -517,9 +562,17 @@ const PaginaReserva: React.FC = () => {
                                   fill="outline" 
                                   expand="block"
                                   className="ion-margin-top"
+                                  disabled={cancellingReservationId === reserva.id}
+                                  onClick={() => handleCancelReservation(reserva.id)}
                                 >
-                                  <IonIcon icon={closeCircleOutline} slot="start" />
-                                  Cancelar Reserva
+                                  {cancellingReservationId === reserva.id ? (
+                                    <IonSpinner name="crescent" />
+                                  ) : (
+                                    <>
+                                      <IonIcon icon={closeCircleOutline} slot="start" />
+                                      Cancelar Reserva
+                                    </>
+                                  )}
                                 </IonButton>
                               </IonCol>
                             </IonRow>
@@ -552,37 +605,31 @@ const PaginaReserva: React.FC = () => {
             <IonList>
               <IonItem>
                 <IonLabel>
-                  <h2>Campus</h2>
+                  <h1>Campus</h1>
                   <p>{getCampusNameById(campuses, campusSeleccionado || 0)}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>Tipo de servicio</h2>
+                  <h1>Tipo de servicio</h1>
                   <p>{servicioSeleccionado}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>Horario y Cancha</h2>
+                  <h1>Horario y Cancha</h1>
                   <p>{horaSeleccionada ? `${horaSeleccionada.hora} - ${horaSeleccionada.cancha}` : ''}</p>
                 </IonLabel>
               </IonItem>
               <IonItem>
                 <IonLabel>
-                  <h2>Día de Reserva</h2>
+                  <h1>Día de Reserva</h1>
                   <p>{fechaSeleccionada.toLocaleDateString('es-ES', { 
                     weekday: 'long', 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric' 
                   })}</p>
-                </IonLabel>
-              </IonItem>
-              <IonItem>
-                <IonLabel>
-                  <h2>RUT</h2>
-                  <p>19.247.979-7</p>
                 </IonLabel>
               </IonItem>
             </IonList>

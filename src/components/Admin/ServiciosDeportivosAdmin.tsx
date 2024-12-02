@@ -163,24 +163,6 @@ const ServiciosDeportivosAdmin: React.FC = () => {
     });
   };
 
-
-  if (error) {
-    return (
-      <IonPage>
-        <IonContent className="ion-padding">
-          <IonCard>
-            <IonCardContent>
-              <p>{error}</p>
-              <IonButton onClick={() => window.location.reload()}>
-                Reintentar
-              </IonButton>
-            </IonCardContent>
-          </IonCard>
-        </IonContent>
-      </IonPage>
-    );
-  }
-
   return (
     <IonPage>
       <IonHeader>

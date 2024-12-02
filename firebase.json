@@ -1,18 +1,16 @@
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAq_62wpUaPXpMAV7eoObmdXLDfy_l_ylI",
-  authDomain: "trim-karma-410215.firebaseapp.com",
-  projectId: "trim-karma-410215",
-  storageBucket: "trim-karma-410215.appspot.com",
-  messagingSenderId: "356670850855",
-  appId: "1:356670850855:web:88cc3d0f332cff7c884b02",
-  measurementId: "G-QKZ0H7FK27"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-export { app, analytics };
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
